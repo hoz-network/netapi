@@ -1,0 +1,5 @@
+dependencies {
+    api project(":api")
+
+    api group: "org.screamingsandals.lib", name: "utils-common", version: SLIB_VERSION
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package hoz.proto.service;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.service.language";
+
+import "google/protobuf/empty.proto";
+
+import "hoz/proto/Commons.proto";
+import "hoz/proto/data/DataStorage.proto";
+
+message LanguageDataRequest {
+  string languageCode = 1;
+}
+
+message LanguageDataResponse {
+  hoz.proto.data.LanguageDataContainer data = 1;
+  Result result = 2;
+}
+
+service LanguageService {
+  rpc requestLanguage(LanguageDataRequest) returns (LanguageDataResponse);
+  rpc requestAllLanguages(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
+
+  rpc listenForUpdates(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
+}

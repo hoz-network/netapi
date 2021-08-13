@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package hoz.proto.service;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.service.player";
+
+import "google/protobuf/empty.proto";
+
+import "hoz/proto/Commons.proto";
+import "hoz/proto/data/PlayerData.proto";
+
+message PlayerDataRequest {
+  string uuid = 1;
+}
+
+message PlayerDataResult {
+  string uuid = 1;
+  hoz.proto.data.PlayerDataContainer playerData = 2;
+  Result result = 3;
+}
+
+message PlayerDataUpdate {
+  string uuid = 1;
+  hoz.proto.data.PlayerDataContainer playerData = 2;
+}
+
+message PlayerStatusChangeRequest {
+  string uuid = 1;
+  hoz.proto.data.PlayerState newState = 2;
+}
+
+message PlayerStatusChangeResult {
+  string uuid = 1;
+  Result result = 2;
+}
+
+message PlayerStatusHistoryRequest {
+  string uuid = 1;
+}
+
+message PlayerStatusHistoryResult {
+  string uuid = 1;
+  hoz.proto.data.PlayerHistoryContainer historyData = 2;
+  Result result = 3;
+}
+
+message PlayerLanguageRequest {
+  string uuid = 1;
+  string address = 2;
+}
+
+message PlayerLanguageRequestResult {
+  string uuid = 1;
+  string locale = 2;
+}
+
+service PlayerDataService {
+  rpc requestPlayerData(PlayerDataRequest) returns (PlayerDataResult);
+  rpc requestStatusChange(PlayerStatusChangeRequest) returns (PlayerStatusChangeResult);
+  rpc requestPlayerHistory(PlayerStatusHistoryRequest) returns (PlayerStatusHistoryResult);
+  rpc requestPlayerLanguage(PlayerLanguageRequest) returns (PlayerLanguageRequestResult);
+
+  rpc updatePlayerData(PlayerDataUpdate) returns (google.protobuf.Empty);
+
+  rpc listenForPlayerDataUpdates(google.protobuf.Empty) returns (stream PlayerDataUpdate);
+}

@@ -1,0 +1,15 @@
+dependencies {
+    compileOnly purpur()
+    compileOnly group: 'commons-lang', name: 'commons-lang', version: COMMONS_LANG_VERSION
+
+    api project(":api")
+    api project(":grpc")
+
+    api group: "org.screamingsandals.lib", name: "core-bukkit", version: SLIB_VERSION
+    api group: "org.screamingsandals.lib", name: "command-bukkit", version: SLIB_VERSION
+    api group: "org.screamingsandals.lib", name: "lang", version: SLIB_VERSION
+
+    api group: 'com.google.inject', name: 'guice', version: GUICE_VERSION
+    api group: 'com.github.ben-manes.caffeine', name: 'caffeine', version: CAFFEINE_VERSION
+    api group: 'cloud.commandframework', name: 'cloud-minecraft-extras', version: '1.4.0'
+}
