@@ -1,0 +1,20 @@
+pluginManagement {
+    repositories {
+        maven {
+            url = "https://repo.screamingsandals.org/public/"
+        }
+
+        gradlePluginPortal()
+        mavenLocal()
+    }
+}
+
+rootProject.name = 'netapi'
+
+include 'api'
+project(':api').projectDir = file('api')
+include 'common'
+project(':common').projectDir = file('common')
+include 'grpc'
+include 'client'
+

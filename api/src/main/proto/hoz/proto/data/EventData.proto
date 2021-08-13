@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package hoz.proto.event;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.event";
+
+import "hoz/proto/data/DataStorage.proto";
+
+message EventItem {
+  EventItemType type = 1;
+  hoz.proto.data.DataVector3D location = 2;
+}
+
+enum EventItemType {
+  HEAD = 0;
+  BLOCK = 1;
+  //TODO: add others
+}
+
+enum EventType {
+  WHO_KNOWS = 0;
+  EASTER = 1;
+  CHRISTMAS = 2;
+  //TODO: add others
+}

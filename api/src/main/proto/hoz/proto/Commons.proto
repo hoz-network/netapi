@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package hoz.proto;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.commons";
+
+import "google/protobuf/timestamp.proto";
+
+message Result {
+  enum Status {
+    FAIL = 0;
+    OK = 1;
+    UNKNOWN = 2;
+  }
+
+  Status status = 1;
+  string message = 2;
+}
+
+/*
+Data that can be owned by someone
+ */
+message OwnableData {
+  message History {
+    /*
+    Timestamp of change
+     */
+    google.protobuf.Timestamp timestamp = 1;
+    /*
+    New owner of this data
+     */
+    string newOwner = 2;
+    /*
+    Old owner of this data
+     */
+    string oldOwner = 3;
+  }
+  /*
+  UUID of the owner
+   */
+  string owner = 1;
+  /*
+  History of the data
+   */
+  repeated History ownerHistory = 2;
+}
+
+/*
+Operation that changes data
+ */
+message DataOperation {
+  enum OriginSource {
+    BAGR = 0;
+    LOBBY_SERVER = 1;
+    GAME_SERVER = 2;
+    PROXY_SERVER = 3;
+    WEB = 4;
+  }
+
+  enum OriginType {
+    SYSTEM = 0;
+    STAFF = 1;
+    GAME = 2;
+    BUY = 3;
+    PLAYER = 4;
+    FRIEND = 5;
+    GUILD = 6;
+  }
+
+  enum State {
+    PENDING = 0;
+    COMPLETED = 1;
+    DECLINED = 2;
+    EXPIRED = 3;
+  }
+
+  /*
+  Generated UUID of the operation
+   */
+  string operationId = 1;
+  /*
+  Optional UUID of operation sender
+   */
+  string operationSender = 2;
+  /*
+  Current state of this operation
+   */
+  State state = 3;
+  /*
+  Source of the operation (web, server, etc)
+   */
+  OriginSource originSource = 4;
+  /*
+  Type of the origin (player, buy, transfer, etc)
+   */
+  OriginType originType = 5;
+  /*
+  Serialized LocalDateTime of creation
+   */
+  google.protobuf.Timestamp createdDateTime = 6;
+}
+
+message GameUpdatesRequest {
+  hoz.proto.GameType type = 1;
+}
+
+enum GameType {
+  UNKNOWN = 0;
+  BEDWARS = 1;
+  SKYWARS = 2;
+  UHC = 3;
+  PIRATES = 4;
+  MINI_UHC = 5;
+  ANNIHILATION = 6;
+  MINI_ANNIHILATION = 7;
+
+  BUILD_BATTLE = 8;
+  SURVIVAL_GAMES = 9;
+  COOKIE_SLAP = 10;
+}
+
+enum TTimeProto {
+  SECONDS = 0;
+  TICKS = 1;
+  MINUTES = 2;
+  HOURS = 3;
+}

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package hoz.proto.data;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.storage";
+
+import "hoz/proto/Commons.proto";
+
+message LanguageDataContainer {
+  string languageCode = 1;
+  string languageData = 2;
+}
+
+message GameFrameData {
+  string uuid = 1;
+  string name = 2;
+  GameDataContainer gameData = 3;
+  GameDataContainer configData = 4;
+  hoz.proto.GameType gameType = 5;
+}
+
+message GameDataContainer {
+  DataType dataType = 1;
+  string identifier = 2;
+  string data = 3;
+  hoz.proto.GameType gameType = 4;
+}
+
+message LocationHolderGrpc {
+  int64 x = 1;
+  int64 y = 2;
+  int64 z = 3;
+  int64 yaw = 4;
+  int64 pitch = 5;
+  string world = 6;
+}
+
+message DataVector3D {
+  int64 x = 1;
+  int64 y = 2;
+  int64 z = 3;
+}
+
+enum DataType {
+  GAME = 0;
+  CONFIG = 1;
+  STORE = 2;
+  RESOURCES = 3;
+}

@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package hoz.proto.data;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.currency";
+
+import "hoz/proto/Commons.proto";
+
+/*
+Currency holder for all possible situations :)
+ */
+message NetCurrency {
+  //type of currency
+  enum Type {
+    MAIN = 0;
+    GAME = 1;
+    GUILD = 2;
+    LEVEL = 3;
+  }
+
+  /*
+  Current count of the currency
+   */
+  int64 currencyCount = 1;
+  /*
+  All historic currency operations
+   */
+  repeated CurrencyOperation operationHistory = 2;
+  /*
+    Given currency type
+  */
+  Type currencyType = 4;
+}
+
+/*
+Currency operation that changes NetCurrency
+ */
+message CurrencyOperation {
+  /*
+  Action of the operation
+   */
+  enum Action {
+    ADD = 0;
+    REMOVE = 1;
+    SET_ALL = 2;
+    REMOVE_ALL = 3;
+  }
+
+  /*
+  Action to do
+   */
+  Action action = 1;
+  /*
+  Type of the currency
+   */
+  NetCurrency.Type currencyType = 2;
+  /*
+  Initial count that was before modifying
+   */
+  int64 initialCount = 3;
+  /*
+  Count to modify initial value
+   */
+  int64 toModifyCount = 4;
+  /*
+  Final count
+   */
+  int64 newCount = 5;
+  /*
+  Information about this operation
+   */
+  DataOperation operation = 6;
+  /*
+  Owner data
+   */
+  string ownerId = 7;
+}
+
+/*
+Holds all currencies together for given owner
+ */
+message CurrencyContainer {
+  /*
+ Owner of this data
+  */
+  OwnableData ownableData = 1;
+  /*
+  All currencies
+   */
+  repeated NetCurrency currencies = 2;
+}
