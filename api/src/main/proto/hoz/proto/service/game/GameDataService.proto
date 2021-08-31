@@ -7,6 +7,7 @@ option java_package = "net.hoz.api.service.game";
 
 import "google/protobuf/empty.proto";
 import "hoz/proto/Commons.proto";
+import "resulter/proto/Resulter.proto";
 import "hoz/proto/data/DataStorage.proto";
 
 message AllGameFrameDataRequest {
@@ -20,7 +21,7 @@ message GameFrameDataRequest {
 
 message GameFrameDataResponse {
   hoz.proto.data.GameFrameData data = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
 message GameFrameDataSaveRequest {
@@ -29,7 +30,7 @@ message GameFrameDataSaveRequest {
 
 message GameFrameDataSaveResponse {
   string uuid = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
 message GameIdRequest {
@@ -50,10 +51,10 @@ message RequestDefaultData {
 
 message DefaultDataResponse {
   hoz.proto.data.GameDataContainer container = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
-service GameDataProvider {
+service GameDataService {
   rpc requestGameFrame(GameFrameDataRequest) returns (GameFrameDataResponse);
   rpc requestAllGameFrames(AllGameFrameDataRequest) returns (stream GameFrameDataResponse);
   rpc requestGameUuid(GameIdRequest) returns (GameIdResponse);
@@ -61,6 +62,6 @@ service GameDataProvider {
   rpc updateGameData(GameFrameDataSaveRequest) returns (GameFrameDataSaveResponse);
   rpc requestDefaultData(RequestDefaultData) returns (stream DefaultDataResponse);
 
-  rpc listenForDataUpdates(GameUpdatesRequest) returns (stream hoz.proto.data.GameDataContainer);
-  rpc listenForFrameUpdates(GameUpdatesRequest) returns (stream hoz.proto.data.GameFrameData);
+  rpc subscribeContainers(GameUpdatesRequest) returns (stream hoz.proto.data.GameDataContainer);
+  rpc subscribeFrames(GameUpdatesRequest) returns (stream hoz.proto.data.GameFrameData);
 }

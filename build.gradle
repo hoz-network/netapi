@@ -19,6 +19,21 @@ subprojects {
         maven {
             url = "https://repo.screamingsandals.org/public/"
         }
+
+        if (System.getenv("hoz_internal_token") != null) {
+            maven {
+                url = "https://repo.hoznet.dev/internal"
+                name = "hoz-internal"
+
+                credentials(HttpHeaderCredentials) {
+                    name = 'Private-Token'
+                    value = System.getenv("hoz_internal_token")
+                }
+                authentication {
+                    header(HttpHeaderAuthentication)
+                }
+            }
+        }
     }
 
     configurations.all {

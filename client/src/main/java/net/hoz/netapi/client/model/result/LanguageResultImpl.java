@@ -1,10 +1,13 @@
 package net.hoz.netapi.client.model.result;
 
+import com.iamceph.resulter.core.api.ResultStatus;
+import com.iamceph.resulter.core.api.Resultable;
+import com.iamceph.resulter.core.model.Resulters;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
-import net.hoz.api.commons.Result;
+import lombok.experimental.Accessors;
 import net.kyori.adventure.text.minimessage.Template;
 import org.screamingsandals.lib.lang.Translation;
 
@@ -13,16 +16,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Builder(access = AccessLevel.PACKAGE)
+@Accessors(fluent = true)
 @Getter
 @ToString
 class LanguageResultImpl implements LanguageResult {
     private final List<Template> templates = new LinkedList<>();
-    private final Result.Status status;
+    private final ResultStatus status;
     private final List<Translation> translations;
-    private final Throwable throwable;
+    private final Throwable error;
 
     @Override
-    public String getMessage() {
+    public String message() {
         return translations
                 .stream()
                 .map(next -> String.join(".", next.getKeys()))
@@ -31,11 +35,34 @@ class LanguageResultImpl implements LanguageResult {
 
     @Override
     public boolean isOk() {
-        return status == Result.Status.OK;
+        return status == ResultStatus.OK;
     }
 
     @Override
     public boolean isFail() {
-        return status == Result.Status.FAIL;
+        return status == ResultStatus.FAIL;
+    }
+
+    @Override
+    public boolean isWarning() {
+        return status == ResultStatus.WARNING;
+    }
+
+    /**
+     * @see Resultable#convertor()
+     */
+    @Override
+    public Convertor convertor() {
+        return new Convertor() {
+            @Override
+            public String json() {
+                return Resulters.convertor().json(LanguageResultImpl.this);
+            }
+
+            @Override
+            public <K> K convert(Class<K> target) {
+                return Resulters.convertor().convert(LanguageResultImpl.this, target);
+            }
+        };
     }
 }

@@ -8,6 +8,7 @@ option java_package = "net.hoz.api.service.currency";
 import "google/protobuf/empty.proto";
 
 import "hoz/proto/Commons.proto";
+import "resulter/proto/Resulter.proto";
 import "hoz/proto/data/CurrencyData.proto";
 
 /*
@@ -21,32 +22,24 @@ message CurrencyOperationRequest {
 Operation response with result and ID of the operation
 */
 message CurrencyOperationResult {
-  Result result = 1;
+  resulter.proto.Result result = 1;
   hoz.proto.data.CurrencyOperation operation = 2;
-  int64 newCount = 3;
+  double newCount = 3;
 }
 
 /*
 Request for container with given UUID
 */
-message SingleCurrencyContainerRequest {
+message CurrencyContainerRequest {
   string uuid = 1;
 }
 
 /*
 Response for single container request
 */
-message SingleCurrencyContainerResult {
-  Result result = 1;
+message CurrencyContainerResult {
+  resulter.proto.Result result = 1;
   hoz.proto.data.CurrencyContainer container = 2;
-}
-
-/*
-Response for all available containers request
-*/
-message CurrencyContainersResult {
-  Result result = 1;
-  repeated hoz.proto.data.CurrencyContainer containers = 2;
 }
 
 /*
@@ -56,17 +49,19 @@ service CurrencyService {
   /*
   Requests all available containers.
   */
-  rpc getAllContainers(google.protobuf.Empty) returns (CurrencyContainersResult);
+  rpc all(google.protobuf.Empty) returns (stream hoz.proto.data.CurrencyContainer);
   /*
   Requests one container for one UUID in request
   */
-  rpc getPlayerContainer(SingleCurrencyContainerRequest) returns (SingleCurrencyContainerResult);
+  rpc oneFor(CurrencyContainerRequest) returns (CurrencyContainerResult);
+
   /*
   Sends new operation to the BAGR
   */
-  rpc sendNewOperation(CurrencyOperationRequest) returns (CurrencyOperationResult);
+  rpc operation(CurrencyOperationRequest) returns (CurrencyOperationResult);
+
   /*
   Listens for updates from BAGR
   */
-  rpc listenForUpdates(google.protobuf.Empty) returns (stream SingleCurrencyContainerResult);
+  rpc subscribe(google.protobuf.Empty) returns (stream hoz.proto.data.CurrencyContainer);
 }

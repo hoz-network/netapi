@@ -1,14 +1,14 @@
 package net.hoz.netapi.grpc.channel;
 
+import com.iamceph.resulter.core.SimpleResult;
+import com.iamceph.resulter.core.api.Resultable;
 import io.grpc.ClientInterceptor;
 import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import lombok.Getter;
-import net.hoz.api.result.SimpleResult;
+import lombok.extern.slf4j.Slf4j;
 import net.hoz.netapi.grpc.interceptor.client.NetClientInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -20,18 +20,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+@Slf4j
 @Getter
 public class DefaultGrpcChannel implements GrpcChannel {
-    private final Logger log = LoggerFactory.getLogger(GrpcChannel.class);
     private final List<ChannelRenewCallback> renewCallbacks = new LinkedList<>();
+
+    private final AtomicBoolean firstTry = new AtomicBoolean(true);
     private final AtomicBoolean usingBackup = new AtomicBoolean(false);
     private final AtomicBoolean wasError = new AtomicBoolean(false);
+    private final AtomicReference<Config> activeConfig;
+    private final AtomicReference<ManagedChannel> channel;
+
     private final String owner;
     private final UUID channelId;
     private final Config config;
     private final Config backup;
-    private final AtomicReference<Config> activeConfig;
-    private final AtomicReference<ManagedChannel> channel;
     private final boolean isInMultiStub;
 
     private ManagedChannel mainChannelTesting;
@@ -68,10 +71,11 @@ public class DefaultGrpcChannel implements GrpcChannel {
      * -> If using backup, check it. If backup is unavailable, switch back to main.
      * -> If main connection is broken, try to switch to backup if possible
      * -> If no attempt is successfully done, wait for next check
-     * @return {@link SimpleResult} of this checking
+     * @return {@link Resultable} of this checking
      */
     @Override
-    public SimpleResult checkConnection() {
+    public Resultable checkConnection() {
+        log.trace("Checking connection for service {}.", owner);
         //rebuild channel if its broken somehow
         if (channel.get() == null
                 || channel.get().isShutdown()
@@ -113,7 +117,7 @@ public class DefaultGrpcChannel implements GrpcChannel {
                 usingBackup.set(false);
             }
 
-            log.trace("Result of checking backup channel: {}", result.getStatus());
+            log.trace("Result of checking backup channel: {}", result.status());
         }
 
         final var result = checkMainConnection();
@@ -167,7 +171,7 @@ public class DefaultGrpcChannel implements GrpcChannel {
         executor.scheduleAtFixedRate(this::checkConnection, 10, config.getCheckTime(), TimeUnit.SECONDS);
     }
 
-    private SimpleResult checkMainConnection() {
+    private Resultable checkMainConnection() {
         if (mainChannelTesting == null) {
             mainChannelTesting = buildChannel(config);
         }
@@ -175,7 +179,7 @@ public class DefaultGrpcChannel implements GrpcChannel {
         return checkConnectionForChannel(mainChannelTesting, "main");
     }
 
-    private SimpleResult checkBackupConnection() {
+    private Resultable checkBackupConnection() {
         if (backup == null) {
             return SimpleResult.fail("Backup not configured!");
         }
@@ -187,7 +191,7 @@ public class DefaultGrpcChannel implements GrpcChannel {
         return checkConnectionForChannel(backupChannelTesting, "backup");
     }
 
-    private SimpleResult checkConnectionForChannel(ManagedChannel channel, String type) {
+    private Resultable checkConnectionForChannel(ManagedChannel channel, String type) {
         final var result = checkConnectionState(channel);
         if (result.isOk()) {
             //log.trace("OK!");
@@ -208,11 +212,11 @@ public class DefaultGrpcChannel implements GrpcChannel {
             return SimpleResult.ok();
         }
 
-        log.trace(result3.getMessage());
+        log.trace(result3.message());
         return result3;
     }
 
-    private SimpleResult checkConnectionState(ManagedChannel channel) {
+    private Resultable checkConnectionState(ManagedChannel channel) {
         final var connectState = channel.getState(true);
         if (connectState == ConnectivityState.READY) {
             return SimpleResult.ok();

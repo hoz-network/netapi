@@ -8,8 +8,16 @@ option java_package = "net.hoz.api.service.party";
 import "google/protobuf/empty.proto";
 
 import "hoz/proto/Commons.proto";
+import "resulter/proto/Resulter.proto";
 import "hoz/proto/data/PlayerData.proto";
 import "hoz/proto/data/PartyData.proto";
+
+enum PartyAction {
+  UNKNOWN = 0;
+  JOIN = 1;
+  KICK = 2;
+  LEAVE = 3;
+}
 
 message PartyIdRequest {
   string ownerUuid = 1;
@@ -17,37 +25,21 @@ message PartyIdRequest {
 
 message PartyIdResult {
   string uuid = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
-message PartyJoinRequest {
+message PartyActionRequest {
   string uuid = 1;
-  string requesterUuid = 2;
+  string targetUuid = 2;
+
+  PartyAction action = 3;
 }
 
-message PartyJoinResult {
+message PartyActionResult {
   string uuid = 1;
-  Result result = 2;
-}
+  resulter.proto.Result result = 2;
 
-message PartyKickRequest {
-  string uuid = 1;
-  string toBeKickedUuid = 2;
-}
-
-message PartyKickResult {
-  string uuid = 1;
-  Result result = 2;
-}
-
-message PartyLeaveRequest {
-  string uuid = 1;
-  string toLeaveUuid = 2;
-}
-
-message PartyLeaveResult {
-  string uuid = 1;
-  Result result = 2;
+  PartyAction action = 3;
 }
 
 message PartySwitchServerRequest {
@@ -58,25 +50,21 @@ message PartySwitchServerRequest {
 
 message PartySwitchServerResult {
   string uuid = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
-message PartyDataRequest {
+message PartyIdentifier {
   string uuid = 1;
 }
 
 message PartyDataResult {
   hoz.proto.data.PartyDataContainer partyData = 1;
-  Result result = 2;
-}
-
-message PartyInvitesRequest {
-  string uuid = 1;
+  resulter.proto.Result result = 2;
 }
 
 message PartyInvitesResult {
   hoz.proto.data.PartyInviteData inviteData = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
 message PartyInviteRequest {
@@ -99,11 +87,9 @@ message PartyCountUpdate {
 
 service PartyService {
   rpc requestPartyUuid(PartyIdRequest) returns (PartyIdResult);
-  rpc requestPartyJoin(PartyJoinRequest) returns (PartyJoinResult);
-  rpc requestPartyKick(PartyKickRequest) returns (PartyKickResult);
-  rpc requestPartyLeave(PartyLeaveRequest) returns (PartyLeaveRequest);
+  rpc action(PartyActionRequest) returns (PartyActionResult);
   rpc requestPartyInvite(PartyInviteRequest) returns (PartyInviteUpdate);
-  rpc requestPartyData(PartyDataRequest) returns (PartyDataResult);
+  rpc requestPartyData(PartyIdentifier) returns (PartyDataResult);
   rpc requestPartyInvites(PartyInviteRequest) returns (stream PartyInvitesResult);
   rpc requestPartiesCount(google.protobuf.Empty) returns (PartyCountUpdate);
 

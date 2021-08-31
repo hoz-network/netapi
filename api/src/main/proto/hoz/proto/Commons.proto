@@ -7,17 +7,6 @@ option java_package = "net.hoz.api.commons";
 
 import "google/protobuf/timestamp.proto";
 
-message Result {
-  enum Status {
-    FAIL = 0;
-    OK = 1;
-    UNKNOWN = 2;
-  }
-
-  Status status = 1;
-  string message = 2;
-}
-
 /*
 Data that can be owned by someone
  */

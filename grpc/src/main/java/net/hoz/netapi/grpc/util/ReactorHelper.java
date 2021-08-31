@@ -1,9 +1,9 @@
 package net.hoz.netapi.grpc.util;
 
+import com.iamceph.resulter.core.SimpleResult;
+import com.iamceph.resulter.core.model.Result;
 import io.grpc.StatusRuntimeException;
 import lombok.experimental.UtilityClass;
-import net.hoz.api.commons.Result;
-import net.hoz.api.result.SimpleResult;
 import org.slf4j.Logger;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -1,0 +1,14 @@
+ScreamingLibBuilder()
+        .platforms('bukkit')
+        .modules('core', 'command', 'tasker', 'hologram', 'placeholders', 'sidebar', 'healthindicator', 'npc')
+        .version(SLIB_VERSION)
+        .simpleInventories(SIMPLE_INVENTORIES_VERSION)
+        .enableAnnotationProcessor()
+        .build()
+
+dependencies {
+    compileOnly purpur()
+
+    api project(":netapi-common")
+    api group: 'cloud.commandframework', name: 'cloud-minecraft-extras', version: CLOUD_VERSION
+}

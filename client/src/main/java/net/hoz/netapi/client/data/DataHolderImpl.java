@@ -43,7 +43,15 @@ final class DataHolderImpl implements DataHolder {
 
     @Override
     public String get() {
-        return null;
+        try {
+            return GsonConfigurationLoader.builder()
+                    .defaultOptions(options -> options.serializers(builder ->
+                            builder.registerAll(DataFactory.getConfigurateSerializers())))
+                    .buildAndSaveString(root);
+        } catch (Exception e) {
+            log.warn("Failed to save ConfigurationNode!", e);
+            return "";
+        }
     }
 
     private ConfigurationNode build(String json) throws ConfigurateException {
