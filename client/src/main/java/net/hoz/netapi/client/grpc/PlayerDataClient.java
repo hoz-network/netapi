@@ -4,30 +4,45 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.protobuf.Empty;
+import com.iamceph.resulter.core.DataResult;
+import com.iamceph.resulter.core.SimpleResult;
+import com.iamceph.resulter.core.api.DataResultable;
+import com.iamceph.resulter.core.api.Resultable;
+import com.iamceph.resulter.core.model.Result;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import net.hoz.api.commons.Result;
 import net.hoz.api.data.player.PlayerDataContainer;
 import net.hoz.api.data.player.PlayerSettings;
 import net.hoz.api.data.player.PlayerState;
-import net.hoz.api.result.DataResult;
-import net.hoz.api.result.SimpleResult;
 import net.hoz.api.service.player.*;
 import net.hoz.netapi.grpc.service.GrpcStubService;
 import net.hoz.netapi.grpc.util.ReactorHelper;
+import org.apache.commons.lang.LocaleUtils;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+//TODO: rework this
 @Slf4j
 public class PlayerDataClient {
     private final Cache<UUID, PlayerDataContainer> containerCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(30))
             .build();
+
     private final AtomicReference<ReactorPlayerDataServiceGrpc.ReactorPlayerDataServiceStub> stub;
+
+    @Accessors(fluent = true)
+    @Getter
+    private final State state;
+    @Accessors(fluent = true)
+    @Getter
+    private final Settings settings;
+
     private Disposable listener;
 
     @Inject
@@ -35,35 +50,37 @@ public class PlayerDataClient {
         final var holder = stubService.getHolder(ReactorPlayerDataServiceGrpc.class);
         this.stub = holder.getStub(ReactorPlayerDataServiceGrpc.ReactorPlayerDataServiceStub.class);
 
+        this.state = new State(this);
+        this.settings = new Settings(this);
+
         holder.getChannel().renewCallback(this::listenForUpdates);
         listenForUpdates();
     }
 
-    public DataResult<PlayerDataContainer> getPlayerDataCached(UUID uuid) {
+    public DataResultable<PlayerDataContainer> getPlayerDataCached(UUID uuid) {
         return DataResult.failIfNull(containerCache.getIfPresent(uuid));
     }
 
-    public Mono<DataResult<PlayerDataContainer>> getPlayerData(UUID uuid) {
+    public Mono<DataResultable<PlayerDataContainer>> getPlayerData(UUID uuid) {
         return stub.get()
-                .requestPlayerData(PlayerDataRequest.newBuilder()
+                .dataFor(PlayerIdHolder.newBuilder()
                         .setUuid(uuid.toString())
                         .build())
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log))
                 .map(response -> {
-                    final var result = response.getResult();
-                    if (result.getStatus() == Result.Status.OK) {
+                    final var result = SimpleResult.convert(response.getResult());
+                    if (result.isOk()) {
                         containerCache.invalidate(uuid);
                         containerCache.put(uuid, response.getPlayerData());
-                        return DataResult.okData(response.getPlayerData());
+                        return DataResult.ok(response.getPlayerData());
                     }
-
-                    return DataResult.convert(result);
+                    return result.transform();
                 });
     }
 
-    public Mono<SimpleResult> updatePlayerData(UUID uuid, PlayerDataContainer container) {
+    public Mono<Resultable> updatePlayerData(UUID uuid, PlayerDataContainer container) {
         return stub.get()
-                .updatePlayerData(PlayerDataUpdate.newBuilder()
+                .dataUpdateFor(PlayerDataUpdate.newBuilder()
                         .setPlayerData(container)
                         .setUuid(uuid.toString())
                         .build())
@@ -73,43 +90,21 @@ public class PlayerDataClient {
 
     public Mono<PlayerStatusHistoryResult> getPlayerHistory(UUID uuid) {
         return stub.get()
-                .requestPlayerHistory(PlayerStatusHistoryRequest.newBuilder()
+                .historyFor(PlayerIdHolder.newBuilder()
                         .setUuid(uuid.toString())
                         .build())
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
-    public Mono<PlayerStatusChangeResult> changePlayerState(UUID uuid, PlayerState newState) {
+    public Mono<Locale> getPlayerLocale(UUID uuid, String address) {
         return stub.get()
-                .requestStatusChange(PlayerStatusChangeRequest.newBuilder()
+                .languageFor(PlayerLanguageRequest.newBuilder()
                         .setUuid(uuid.toString())
-                        .setNewState(newState)
+                        .setAddress(address)
                         .build())
-                .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
-    }
-
-    public Mono<DataResult<Boolean>> getSettingsForKey(UUID uuid, PlayerSettings.Key key) {
-        final var cachedData = getPlayerDataCached(uuid);
-        if (cachedData.isOk()) {
-            return Mono.just(DataResult.okData(
-                    cachedData.getData()
-                            .getSettings()
-                            .getSettingsMap()
-                            .get(key.getNumber())))
-                    .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
-        }
-
-        return getPlayerData(uuid)
-                .map(result -> {
-                    if (result.isOk() && result.hasData()) {
-                        return DataResult.okData(
-                                result.getData()
-                                        .getSettings()
-                                        .getSettingsMap()
-                                        .get(key.getNumber()));
-                    }
-                    return DataResult.fail(result.getMessage());
-                });
+                .map(next -> LocaleUtils.toLocale(next.getLocale()))
+                .onErrorReturn(Locale.ENGLISH)
+                .defaultIfEmpty(Locale.ENGLISH);
     }
 
     private void listenForUpdates() {
@@ -118,12 +113,61 @@ public class PlayerDataClient {
         }
 
         listener = stub.get()
-                .listenForPlayerDataUpdates(Empty.getDefaultInstance())
+                .subscribe(Empty.getDefaultInstance())
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
                 .subscribe(data -> {
-                    final var uuid = UUID.fromString(data.getUuid());
+                    final var uuid = UUID.fromString(data.getOwnableData().getOwner());
                     containerCache.invalidate(uuid);
-                    containerCache.put(uuid, data.getPlayerData());
+                    containerCache.put(uuid, data);
                 });
+    }
+
+    public record State(PlayerDataClient client) {
+        public Mono<Resultable> online(UUID uuid) {
+            return changeInternal(uuid, PlayerState.ONLINE)
+                    .map(next -> SimpleResult.convert(next.getResult()))
+                    .defaultIfEmpty(SimpleResult.fail("Operation failed due to internal error."));
+        }
+
+        public Mono<Resultable> offline(UUID uuid) {
+            return changeInternal(uuid, PlayerState.OFFLINE)
+                    .map(next -> SimpleResult.convert(next.getResult()))
+                    .defaultIfEmpty(SimpleResult.fail("Operation failed due to internal error."));
+        }
+
+        private Mono<PlayerStatusChangeResult> changeInternal(UUID uuid, PlayerState newState) {
+            return client.stub
+                    .get()
+                    .changeStatusFor(PlayerStatusChangeRequest.newBuilder()
+                            .setUuid(uuid.toString())
+                            .setNewState(newState)
+                            .build())
+                    .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
+        }
+    }
+
+    public record Settings(PlayerDataClient client) {
+        public Mono<Boolean> forKey(UUID uuid, PlayerSettings.Key key) {
+            return Mono.fromSupplier(() -> client.containerCache.getIfPresent(uuid))
+                    .map(next -> next.getSettings()
+                            .getSettingsMap()
+                            .get(key.getNumber()))
+                    .switchIfEmpty(getNonCached(uuid, key));
+        }
+
+        private Mono<Boolean> getNonCached(UUID uuid, PlayerSettings.Key key) {
+            return client.getPlayerData(uuid)
+                    .map(result -> {
+                        if (result.isOk()) {
+                            return result.data()
+                                    .getSettings()
+                                    .getSettingsMap()
+                                    .get(key.getNumber());
+                        }
+
+                        log.warn("Getting settings[{}] for player[{}] failed: {}", key, uuid, result.message());
+                        return false;
+                    });
+        }
     }
 }

@@ -36,11 +36,15 @@ public class NetTranslationContainer implements TranslationContainer {
         final var where = String.join(".", collection);
         final var node = dataHolder.node(where);
         if (node.isList()) {
-            return node.childrenList().stream().map(ConfigurationNode::getString).collect(Collectors.toList());
+            return node.childrenList()
+                    .stream()
+                    .map(ConfigurationNode::getString)
+                    .collect(Collectors.toList());
         }
         if (!node.empty()) {
             return List.of(node.getString(""));
         }
+
         return fallbackContainer != null ? fallbackContainer.translate(collection) : List.of();
     }
 

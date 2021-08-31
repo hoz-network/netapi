@@ -8,6 +8,7 @@ option java_package = "net.hoz.api.service.language";
 import "google/protobuf/empty.proto";
 
 import "hoz/proto/Commons.proto";
+import "resulter/proto/Resulter.proto";
 import "hoz/proto/data/DataStorage.proto";
 
 message LanguageDataRequest {
@@ -16,12 +17,13 @@ message LanguageDataRequest {
 
 message LanguageDataResponse {
   hoz.proto.data.LanguageDataContainer data = 1;
-  Result result = 2;
+  resulter.proto.Result result = 2;
 }
 
 service LanguageService {
-  rpc requestLanguage(LanguageDataRequest) returns (LanguageDataResponse);
-  rpc requestAllLanguages(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
+  rpc one(LanguageDataRequest) returns (LanguageDataResponse);
 
-  rpc listenForUpdates(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
+  rpc all(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
+
+  rpc subscribe(google.protobuf.Empty) returns (stream hoz.proto.data.LanguageDataContainer);
 }

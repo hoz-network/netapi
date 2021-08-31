@@ -5,18 +5,20 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.protobuf.Empty;
 import com.google.protobuf.Timestamp;
+import com.iamceph.resulter.core.DataResult;
+import com.iamceph.resulter.core.SimpleResult;
+import com.iamceph.resulter.core.api.DataResultable;
+import com.iamceph.resulter.core.api.Resultable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.commons.DataOperation;
 import net.hoz.api.data.currency.CurrencyContainer;
 import net.hoz.api.data.currency.CurrencyOperation;
 import net.hoz.api.data.currency.NetCurrency;
-import net.hoz.api.result.DataResult;
-import net.hoz.api.result.SimpleResult;
+import net.hoz.api.service.currency.CurrencyContainerRequest;
+import net.hoz.api.service.currency.CurrencyContainerResult;
 import net.hoz.api.service.currency.CurrencyOperationRequest;
 import net.hoz.api.service.currency.ReactorCurrencyServiceGrpc;
-import net.hoz.api.service.currency.SingleCurrencyContainerRequest;
-import net.hoz.api.service.currency.SingleCurrencyContainerResult;
 import net.hoz.netapi.grpc.service.GrpcStubService;
 import net.hoz.netapi.grpc.util.ReactorHelper;
 import org.screamingsandals.lib.utils.Controllable;
@@ -40,7 +42,7 @@ public class CurrencyDataClient {
     @Getter
     private final Sinks.Many<CurrencyContainer> currencyUpdates;
 
-    private Disposable currencyUpdatesListener;
+    private Disposable updatesListener;
 
     @Inject
     public CurrencyDataClient(GrpcStubService stubService,
@@ -57,34 +59,34 @@ public class CurrencyDataClient {
         listenForUpdates();
 
         controllable.preDisable(() -> {
-            if (currencyUpdatesListener != null) {
-                currencyUpdatesListener.dispose();
+            if (updatesListener != null) {
+                updatesListener.dispose();
             }
         });
     }
 
-    public Mono<DataResult<NetCurrency>> getCurrency(UUID uuid, NetCurrency.Type type) {
+    public Mono<DataResultable<NetCurrency>> getCurrency(UUID uuid, NetCurrency.Type type) {
         return getContainer(uuid)
                 .map(container -> container.getCurrenciesList()
                         .stream()
                         .filter(cur -> cur.getCurrencyType() == type)
                         .findFirst()
-                        .map(DataResult::okData)
+                        .map(DataResult::ok)
                         .orElse(DataResult.fail("No data found.")))
                 .defaultIfEmpty(DataResult.fail("test"));
     }
 
-    public Mono<SimpleResult> addToCurrency(UUID uuid,
-                                            NetCurrency.Type currencyType,
-                                            DataOperation.OriginType originType,
-                                            long count) {
+    public Mono<Resultable> addToCurrency(UUID uuid,
+                                          NetCurrency.Type currencyType,
+                                          DataOperation.OriginType originType,
+                                          long count) {
         return sendNewOperation(CurrencyOperationRequest.newBuilder()
                 .setOperation(buildOperation(uuid, currencyType,
                         CurrencyOperation.Action.ADD, originType, count))
                 .build());
     }
 
-    public Mono<SimpleResult> removeFromCurrency(UUID uuid,
+    public Mono<Resultable> removeFromCurrency(UUID uuid,
                                                  NetCurrency.Type currencyType,
                                                  DataOperation.OriginType originType,
                                                  long count) {
@@ -94,7 +96,7 @@ public class CurrencyDataClient {
                 .build());
     }
 
-    public Mono<SimpleResult> setNewCurrencyCount(UUID uuid,
+    public Mono<Resultable> setNewCurrencyCount(UUID uuid,
                                                   NetCurrency.Type currencyType,
                                                   DataOperation.OriginType originType,
                                                   long count) {
@@ -107,16 +109,16 @@ public class CurrencyDataClient {
     private Mono<CurrencyContainer> getContainer(UUID uuid) {
         return Mono.fromSupplier(() -> containerCache.getIfPresent(uuid))
                 .switchIfEmpty(stub.get()
-                        .getPlayerContainer(SingleCurrencyContainerRequest.newBuilder()
+                        .oneFor(CurrencyContainerRequest.newBuilder()
                                 .setUuid(uuid.toString())
                                 .build())
                         .filter(next -> ReactorHelper.resultFilter("getContainer", next.getResult(), log))
-                        .mapNotNull(SingleCurrencyContainerResult::getContainer));
+                        .mapNotNull(CurrencyContainerResult::getContainer));
     }
 
-    private Mono<SimpleResult> sendNewOperation(CurrencyOperationRequest request) {
+    private Mono<Resultable> sendNewOperation(CurrencyOperationRequest request) {
         return stub.get()
-                .sendNewOperation(request)
+                .operation(request)
                 .map(result -> SimpleResult.convert(result.getResult()));
     }
 
@@ -143,14 +145,13 @@ public class CurrencyDataClient {
     }
 
     private void listenForUpdates() {
-        if (currencyUpdatesListener != null) {
-            currencyUpdatesListener.dispose();
+        if (updatesListener != null) {
+            updatesListener.dispose();
         }
 
-        currencyUpdatesListener = stub.get()
-                .listenForUpdates(Empty.getDefaultInstance())
-                .doOnNext(data -> {
-                    final var container = data.getContainer();
+        updatesListener = stub.get()
+                .subscribe(Empty.getDefaultInstance())
+                .doOnNext(container -> {
                     containerCache.put(UUID.fromString(container.getOwnableData().getOwner()), container);
                     currencyUpdates.tryEmitNext(container);
                 })

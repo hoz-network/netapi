@@ -25,6 +25,8 @@ dependencies {
 
     //configurate
     api group: 'org.spongepowered', name: 'configurate-gson', version: CONFIGURATE_VERSION
+
+    api group: 'com.iamceph.resulter', name: 'resulter', version: RESULTER_VERSION
 }
 
 protobuf {

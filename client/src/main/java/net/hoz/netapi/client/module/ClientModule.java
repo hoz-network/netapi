@@ -44,7 +44,10 @@ public class ClientModule extends AbstractModule {
 
         bind(CurrencyDataClient.class).asEagerSingleton();
         bind(PlayerDataClient.class).asEagerSingleton();
-        bind(GameDataClient.class).asEagerSingleton();
         bind(LanguageClient.class).asEagerSingleton();
+
+        if (originSource == DataOperation.OriginSource.GAME_SERVER) {
+            bind(GameDataClient.class).asEagerSingleton();
+        }
     }
 }

@@ -3,6 +3,8 @@ package net.hoz.netapi.client.grpc;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
+import com.iamceph.resulter.core.SimpleResult;
+import com.iamceph.resulter.core.api.DataResultable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.commons.GameType;
@@ -10,7 +12,6 @@ import net.hoz.api.commons.GameUpdatesRequest;
 import net.hoz.api.data.storage.DataType;
 import net.hoz.api.data.storage.GameDataContainer;
 import net.hoz.api.data.storage.GameFrameData;
-import net.hoz.api.result.DataResult;
 import net.hoz.api.service.game.*;
 import net.hoz.netapi.grpc.service.GrpcStubService;
 import net.hoz.netapi.grpc.util.ReactorHelper;
@@ -23,14 +24,18 @@ import reactor.core.publisher.Sinks;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class GameDataClient implements Disposable {
+    @Getter
     private final Cache<UUID, GameFrameData> gameFrameDataCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
             .build();
+    @Getter
     private final Cache<Pair<String, DataType>, GameDataContainer> dataContainerCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(10))
             .build();
@@ -41,7 +46,7 @@ public class GameDataClient implements Disposable {
     @Getter
     private final Sinks.Many<GameDataContainer> containerUpdates;
 
-    private final AtomicReference<ReactorGameDataProviderGrpc.ReactorGameDataProviderStub> stub;
+    private final AtomicReference<ReactorGameDataServiceGrpc.ReactorGameDataServiceStub> stub;
 
     private Disposable frameUpdatesListener;
     private Disposable containerUpdatesListener;
@@ -56,37 +61,37 @@ public class GameDataClient implements Disposable {
         this.frameUpdates = frameUpdates;
         this.containerUpdates = containerUpdates;
 
-        final var holder = stubService.getHolder(ReactorGameDataProviderGrpc.class);
-        this.stub = holder.getStub(ReactorGameDataProviderGrpc.ReactorGameDataProviderStub.class);
+        final var holder = stubService.getHolder(ReactorGameDataServiceGrpc.class);
+        this.stub = holder.getStub(ReactorGameDataServiceGrpc.ReactorGameDataServiceStub.class);
 
         controllable.disable(this::dispose);
-        controllable.postEnable(() -> {
-            holder.getChannel().renewCallback(this::subscribeForUpdates);
-            subscribeForUpdates();
 
-            Flux.fromStream(Arrays.stream(DataType.values())
-                            .filter(next -> next != DataType.UNRECOGNIZED))
-                    .flatMap(this::allDefaultData)
-                    .doOnNext(data -> {
-                        log.trace("Adding default data to cache, type[{}], identifier[{}]", data.getDataType().name(), data.getIdentifier());
-                        dataContainerCache.put(Pair.of(data.getIdentifier(), data.getDataType()), data);
-                    });
+        holder.getChannel().renewCallback(this::subscribeForUpdates);
+        subscribeForUpdates();
 
-            this.frameUpdates.asFlux()
-                    .doOnNext(next -> gameFrameDataCache.put(UUID.fromString(next.getUuid()), next));
-            this.containerUpdates.asFlux()
-                    .doOnNext(data -> dataContainerCache.put(Pair.of(data.getIdentifier(), data.getDataType()), data));
-        });
+        Flux.fromStream(Arrays.stream(DataType.values()).filter(next -> next != DataType.UNRECOGNIZED))
+                .flatMap(this::allDefaultData)
+                .doOnNext(data -> {
+                    log.trace("Adding default data to cache, type[{}], identifier[{}]", data.getDataType().name(), data.getIdentifier());
+                    dataContainerCache.put(Pair.of(data.getIdentifier(), data.getDataType()), data);
+                })
+                .subscribe();
+
     }
 
     @Override
     public void dispose() {
-        frameUpdatesListener.dispose();
-        containerUpdatesListener.dispose();
+        if (frameUpdatesListener != null) {
+            frameUpdatesListener.dispose();
+        }
+        if (containerUpdatesListener != null) {
+            containerUpdatesListener.dispose();
+        }
 
         frameUpdates.tryEmitComplete();
         containerUpdates.tryEmitComplete();
 
+        gameFrameDataCache.invalidateAll();
         dataContainerCache.invalidateAll();
     }
 
@@ -115,7 +120,7 @@ public class GameDataClient implements Disposable {
                 );
     }
 
-    public Mono<DataResult<UUID>> update(UUID uuid, String gameData, String gameConfig) {
+    public Mono<DataResultable<UUID>> update(UUID uuid, String gameData, String gameConfig) {
         return stub.get()
                 .updateGameData(GameFrameDataSaveRequest.newBuilder()
                         .setData(GameFrameData.newBuilder()
@@ -130,7 +135,7 @@ public class GameDataClient implements Disposable {
                                         .setData(gameConfig)
                                         .build()))
                         .build())
-                .map(next -> DataResult.convert(next.getResult(), UUID.fromString(next.getUuid())))
+                .map(next -> SimpleResult.convert(next.getResult()).transform(UUID.fromString(next.getUuid())))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
@@ -153,6 +158,15 @@ public class GameDataClient implements Disposable {
                 .map(DefaultDataResponse::getContainer);
     }
 
+    public List<String> getAvailableIdentifiers(DataType type) {
+        return dataContainerCache.asMap()
+                .keySet()
+                .stream()
+                .filter(gameDataContainer -> gameDataContainer.getSecond() == type)
+                .map(Pair::getFirst)
+                .collect(Collectors.toList());
+
+    }
 
     private void subscribeForUpdates() {
         if (frameUpdatesListener != null) {
@@ -163,18 +177,24 @@ public class GameDataClient implements Disposable {
         }
 
         frameUpdatesListener = stub.get()
-                .listenForFrameUpdates(GameUpdatesRequest.newBuilder()
+                .subscribeFrames(GameUpdatesRequest.newBuilder()
                         .setType(gameType)
                         .build())
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
-                .doOnNext(frameUpdates::tryEmitNext)
+                .doOnNext(update -> {
+                    frameUpdates.tryEmitNext(update);
+                    gameFrameDataCache.put(UUID.fromString(update.getUuid()), update);
+                })
                 .subscribe();
         containerUpdatesListener = stub.get()
-                .listenForDataUpdates(GameUpdatesRequest.newBuilder()
+                .subscribeContainers(GameUpdatesRequest.newBuilder()
                         .setType(gameType)
                         .build())
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
-                .doOnNext(containerUpdates::tryEmitNext)
+                .doOnNext(update -> {
+                    containerUpdates.tryEmitNext(update);
+                    dataContainerCache.put(Pair.of(update.getIdentifier(), update.getDataType()), update);
+                })
                 .subscribe();
     }
 }

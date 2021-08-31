@@ -1,19 +1,26 @@
 package net.hoz.netapi.client.grpc;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.protobuf.Empty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.hoz.api.commons.DataOperation;
+import net.hoz.api.commons.GameType;
 import net.hoz.api.data.storage.LanguageDataContainer;
 import net.hoz.api.service.language.ReactorLanguageServiceGrpc;
 import net.hoz.netapi.client.data.DataHolder;
+import net.hoz.netapi.client.model.NLang;
 import net.hoz.netapi.client.model.NetTranslationContainer;
 import net.hoz.netapi.grpc.service.GrpcStubService;
 import net.hoz.netapi.grpc.util.ReactorHelper;
+import net.kyori.adventure.text.Component;
 import org.apache.commons.lang.LocaleUtils;
 import org.screamingsandals.lib.lang.Lang;
 import org.screamingsandals.lib.lang.LangService;
+import org.screamingsandals.lib.lang.Message;
 import org.screamingsandals.lib.player.PlayerWrapper;
 import org.screamingsandals.lib.sender.CommandSenderWrapper;
 import org.screamingsandals.lib.utils.Controllable;
@@ -22,36 +29,47 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
-import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class LanguageClient extends LangService {
+    private final Cache<Locale, Component> cachedPrefixes = Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofMinutes(30))
+            .build();
     private final AtomicReference<ReactorLanguageServiceGrpc.ReactorLanguageServiceStub> stub;
     private final PlayerDataClient playerDataClient;
+    private final DataOperation.OriginSource origin;
+    private final GameType gameType;
 
     @Getter
     private final Sinks.Many<LanguageDataContainer> containerUpdates;
 
     @Setter
     @Getter
-    private Locale FALLBACK_LOCALE = Locale.US;
+    private Locale FALLBACK_LOCALE = Locale.ENGLISH;
 
     private Disposable containerUpdatesListener;
 
     @Inject
     public LanguageClient(PlayerDataClient playerDataClient,
+                          DataOperation.OriginSource origin,
+                          GameType gameType,
                           Sinks.Many<LanguageDataContainer> containerUpdates,
                           GrpcStubService stubService,
                           Controllable controllable) {
         this.playerDataClient = playerDataClient;
+        this.origin = origin;
+        this.gameType = gameType;
         this.containerUpdates = containerUpdates;
         final var holder = stubService.getHolder(ReactorLanguageServiceGrpc.class);
         this.stub = holder.getStub(ReactorLanguageServiceGrpc.ReactorLanguageServiceStub.class);
 
         holder.getChannel().renewCallback(this::listenForUpdates);
         listenForUpdates();
+
+        initialize();
 
         Lang.initDefault(this);
 
@@ -62,8 +80,18 @@ public class LanguageClient extends LangService {
         });
     }
 
+    public Flux<LanguageDataContainer> allLanguages() {
+        return stub.get()
+                .all(Empty.getDefaultInstance())
+                .doOnNext(next -> log.trace("Got language data for code {}!", next.getLanguageCode()));
+    }
+
     @Override
     protected Locale getSenderLocale(CommandSenderWrapper sender) {
+        if (containers.isEmpty()) {
+            log.warn("Language cannot be found, no TranslationContainers are available.");
+        }
+
         if (sender.getType() == CommandSenderWrapper.Type.CONSOLE) {
             return FALLBACK_LOCALE;
         }
@@ -79,17 +107,22 @@ public class LanguageClient extends LangService {
             return super.getSenderLocale(sender);
         }
 
-        final var locale = maybeData.getData().getSettings().getLocale();
+        final var locale = maybeData.data().getSettings().getLocale();
         if (locale.isEmpty()) {
-            return Locale.ENGLISH;
+            return super.getSenderLocale(sender);
         }
         return LocaleUtils.toLocale(locale);
     }
 
-    public Flux<LanguageDataContainer> getAllLanguages() {
-        return stub.get()
-                .requestAllLanguages(Empty.getDefaultInstance())
-                .doOnNext(next -> log.trace("Got language data for code {}!", next.getLanguageCode()));
+    @Override
+    public Component resolvePrefix(CommandSenderWrapper senderWrapper) {
+        final var lang = getSenderLocale(senderWrapper);
+        return cachedPrefixes.get(lang, locale -> {
+            if (origin == DataOperation.OriginSource.GAME_SERVER) {
+                return Message.of(NLang.GAME_PREFIX.apply(gameType)).getForJoined(senderWrapper);
+            }
+            return Message.of(NLang.NETWORK_PREFIX).getForJoined(senderWrapper);
+        });
     }
 
     private void register(LanguageDataContainer data) {
@@ -97,8 +130,8 @@ public class LanguageClient extends LangService {
         try {
             code = LocaleUtils.toLocale(data.getLanguageCode());
         } catch (Exception e) {
-            code = FALLBACK_LOCALE;
             log.warn("Locale {} is invalid! Using default: {}", data.getLanguageCode(), FALLBACK_LOCALE.getLanguage());
+            return;
         }
 
         log.trace("Registering new language {} - {}!", code.getLanguage(), data.getLanguageCode());
@@ -123,17 +156,23 @@ public class LanguageClient extends LangService {
 
         final var container = (NetTranslationContainer) containers.get(code);
         container.getDataHolder().update(data.getLanguageData());
+        cachedPrefixes.invalidateAll();
     }
 
     private void initialize() {
-        getAllLanguages()
+        allLanguages()
                 .doOnComplete(() -> {
                     log.debug("Completed language initializing!");
                     if (containers.containsKey(FALLBACK_LOCALE)) {
                         final var fallback = containers.get(FALLBACK_LOCALE);
                         if (fallback != null) {
                             this.fallbackContainer = fallback;
-                            containers.forEach((key, value) -> value.setFallbackContainer(fallback));
+
+                            //we don't want stack overflow if the translation is not found :)
+                            containers.entrySet()
+                                    .stream()
+                                    .filter(next -> !next.getKey().equals(FALLBACK_LOCALE))
+                                    .forEach((entry) -> entry.getValue().setFallbackContainer(fallback));
                         }
                     }
                 })
@@ -141,10 +180,6 @@ public class LanguageClient extends LangService {
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
                 .subscribeOn(Schedulers.boundedElastic())
                 .subscribe(this::register);
-
-        containerUpdates.asFlux()
-                .doOnNext(this::update)
-                .subscribe();
     }
 
     private void listenForUpdates() {
@@ -153,8 +188,11 @@ public class LanguageClient extends LangService {
         }
 
         containerUpdatesListener = stub.get()
-                .listenForUpdates(Empty.getDefaultInstance())
-                .doOnNext(containerUpdates::tryEmitNext)
+                .subscribe(Empty.getDefaultInstance())
+                .doOnNext(next -> {
+                    this.update(next);
+                    containerUpdates.tryEmitNext(next);
+                })
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
                 .subscribe();
     }

@@ -1,8 +1,8 @@
 package net.hoz.netapi.grpc.channel;
 
+import com.iamceph.resulter.core.api.Resultable;
 import io.grpc.ClientInterceptor;
 import io.grpc.ManagedChannel;
-import net.hoz.api.result.SimpleResult;
 import net.hoz.netapi.grpc.interceptor.client.NetClientInterceptor;
 
 import java.util.List;
@@ -32,9 +32,9 @@ public interface GrpcChannel {
      * Sends simple heartbeat to the server.
      * If failed, tries to reconnect.
      *
-     * @return checks channel's connection. Returns {@link net.hoz.protofiles.commons.Result.Status#FAIL} if no connection is available.
+     * @return checks channel's connection. Returns {@link com.iamceph.resulter.core.api.ResultStatus#FAIL} if no connection is available.
      */
-    SimpleResult checkConnection();
+    Resultable checkConnection();
 
     /**
      * Creates new listener if channel is switched to new one

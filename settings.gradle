@@ -13,8 +13,21 @@ rootProject.name = 'netapi'
 
 include 'api'
 project(':api').projectDir = file('api')
-include 'common'
-project(':common').projectDir = file('common')
+project(":api").name = "netapi-api"
+
 include 'grpc'
+project(':grpc').projectDir = file('grpc')
+project(":grpc").name = "netapi-grpc"
+
 include 'client'
+project(':client').projectDir = file('client')
+project(":client").name = "netapi-client"
+
+include 'common'
+project(':common').projectDir = file('modules/common')
+project(":common").name = "netapi-common"
+
+include 'paper'
+project(':paper').projectDir = file('modules/paper')
+project(":paper").name = "netapi-common-paper"
 
