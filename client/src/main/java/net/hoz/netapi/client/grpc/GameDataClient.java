@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.commons.GameType;
 import net.hoz.api.commons.GameUpdatesRequest;
+import net.hoz.api.data.Identifiable;
 import net.hoz.api.data.storage.DataType;
 import net.hoz.api.data.storage.GameDataContainer;
 import net.hoz.api.data.storage.GameFrameData;
@@ -158,14 +159,14 @@ public class GameDataClient implements Disposable {
                 .map(DefaultDataResponse::getContainer);
     }
 
-    public List<String> getAvailableIdentifiers(DataType type) {
+    public List<Identifiable> getAvailableIdentifiers(DataType type) {
         return dataContainerCache.asMap()
                 .keySet()
                 .stream()
                 .filter(gameDataContainer -> gameDataContainer.getSecond() == type)
                 .map(Pair::getFirst)
+                .map(Identifiable::of)
                 .collect(Collectors.toList());
-
     }
 
     private void subscribeForUpdates() {
