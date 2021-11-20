@@ -1,9 +1,8 @@
 package net.hoz.api.data.game.store;
 
 import lombok.experimental.UtilityClass;
-import net.hoz.api.data.game.store.StoreItem;
-import org.screamingsandals.lib.material.Item;
-import org.screamingsandals.lib.material.meta.EnchantmentHolder;
+import org.screamingsandals.lib.item.Item;
+import org.screamingsandals.lib.item.meta.EnchantmentHolder;
 import org.screamingsandals.lib.utils.AdventureHelper;
 
 import java.util.List;
@@ -13,7 +12,7 @@ public final class StoreConverter {
 
     public Item convertFromStore(StoreItem storeItem, boolean showAttributes) {
         final var item = new Item();
-        item.setMaterial(storeItem.getMaterial());
+        item.setMaterial(storeItem.getItemType());
         item.setPotion(storeItem.getPotion());
         item.setCustomModelData(storeItem.getCustomModelData());
         item.setUnbreakable(storeItem.isUnbreakable());

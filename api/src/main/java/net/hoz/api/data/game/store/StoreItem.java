@@ -5,10 +5,10 @@ import net.hoz.api.data.Identifiable;
 import net.hoz.api.data.game.store.price.Priceable;
 import net.hoz.api.data.game.store.price.StorePrice;
 import org.screamingsandals.lib.attribute.ItemAttributeHolder;
-import org.screamingsandals.lib.material.MaterialHolder;
-import org.screamingsandals.lib.material.meta.EnchantmentHolder;
-import org.screamingsandals.lib.material.meta.PotionEffectHolder;
-import org.screamingsandals.lib.material.meta.PotionHolder;
+import org.screamingsandals.lib.item.ItemTypeHolder;
+import org.screamingsandals.lib.item.meta.EnchantmentHolder;
+import org.screamingsandals.lib.item.meta.PotionEffectHolder;
+import org.screamingsandals.lib.item.meta.PotionHolder;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.LinkedList;
@@ -26,7 +26,7 @@ public class StoreItem implements Priceable, Identifiable {
 
     private String nameKey;
     private String loreKey;
-    private MaterialHolder material;
+    private ItemTypeHolder itemType;
     private int amount = 1;
     private Integer customModelData;
     private int repair;
