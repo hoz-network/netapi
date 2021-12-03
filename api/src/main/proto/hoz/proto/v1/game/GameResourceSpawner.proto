@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package hoz.proto.v1.game;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.game";
+
+import "sandals.proto.v1/Location.proto";
+import "hoz/proto/v1/data/CommonData.proto";
+
+message ResourceSpawnerData {
+  string uuid = 1;
+  string type = 2;
+  string teamName = 3;
+
+  sandals.proto.v1.WrappedLocation location = 4;
+
+  double spread = 5;
+  int32 maxSpawnAmount = 6;
+  int32 spawnAmount = 7;
+  int32 spawnPeriod = 8;
+  string spawnTime = 9; //TODO
+
+  bool withHologram = 10;
+  bool useGlobalValues = 11;
+
+  map<string, string> customData = 13;
+}
+
+message GameResourceSpawnerType {
+  string name = 1;
+  string langKey = 2;
+  string material = 3;
+  hoz.proto.v1.data.MinecraftColor color = 4;
+
+  double spread = 5;
+  int32 maxSpawnAmount = 6;
+  int32 spawnAmount = 7;
+  int32 spawnPeriod = 8;
+  string spawnTime = 9; //TODO
+}

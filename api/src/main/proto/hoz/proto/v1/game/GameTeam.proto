@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package hoz.proto.v1.game;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.game";
+
+import "sandals.proto.v1/Location.proto";
+import "hoz/proto/v1/data/CommonData.proto";
+
+message GameTeamData {
+  string name = 1;
+  hoz.proto.v1.data.MinecraftColor color = 2;
+  sandals.proto.v1.WrappedLocation spawn = 3;
+  sandals.proto.v1.WrappedLocation target = 4;
+  int32 maxPlayers = 5;
+
+  map<string, string> customData = 6;
+}

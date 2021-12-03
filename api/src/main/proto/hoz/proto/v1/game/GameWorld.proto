@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package hoz.proto.v1.game;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.game";
+
+import "sandals.proto.v1/Location.proto";
+
+message GameWorld {
+  map<string, WorldData> customWorlds = 1;
+  WorldData gameWorld = 2;
+  WorldData lobbyWorld = 3;
+}
+
+message WorldData {
+  string name = 1;
+  WorldType type = 2;
+
+  sandals.proto.v1.WrappedLocation border1 = 3;
+  sandals.proto.v1.WrappedLocation border2 = 4;
+  sandals.proto.v1.WrappedLocation spawn = 5;
+  sandals.proto.v1.WrappedLocation spectator = 6;
+
+  map<string, sandals.proto.v1.WrappedLocation> customLocations = 7;
+  map<string, string> customData = 8;
+
+  enum WorldType {
+    UNKNOWN = 0;
+    LOBBY = 1;
+    ARENA = 2;
+  }
+
+  enum BorderType {
+    FIRST = 0;
+    SECOND = 1;
+  }
+}

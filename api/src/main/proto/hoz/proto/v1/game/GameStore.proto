@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package hoz.proto.v1.game;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.game";
+
+import "sandals.proto.v1/Location.proto";
+
+message GameStoreData {
+  string name = 1;
+  string holderName = 2;
+  string teamName = 3;
+
+  sandals.proto.v1.WrappedLocation location = 4;
+
+  string entityType = 5;
+  string entityModifier = 6;
+  bool baby = 7;
+
+  map<string, string> customData = 8;
+}

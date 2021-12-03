@@ -2,12 +2,11 @@ package net.hoz.netapi.client.module;
 
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
-import net.hoz.api.commons.GameType;
 import net.hoz.api.data.DataOperation;
-import net.hoz.netapi.client.service.CurrencyDataProvider;
-import net.hoz.netapi.client.service.GameDataProvider;
-import net.hoz.netapi.client.service.NetLangService;
-import net.hoz.netapi.client.service.PlayerDataProvider;
+import net.hoz.api.data.game.GameType;
+import net.hoz.netapi.client.service.NetGameManager;
+import net.hoz.netapi.client.service.NetLangManager;
+import net.hoz.netapi.client.service.NetPlayerManager;
 
 @RequiredArgsConstructor
 public class ClientModule extends AbstractModule {
@@ -25,12 +24,11 @@ public class ClientModule extends AbstractModule {
 
         //TODO: rsocket configuration
 
-        bind(CurrencyDataProvider.class).asEagerSingleton();
-        bind(PlayerDataProvider.class).asEagerSingleton();
-        bind(NetLangService.class).asEagerSingleton();
+        bind(NetPlayerManager.class).asEagerSingleton();
+        bind(NetLangManager.class).asEagerSingleton();
 
         if (originSource == DataOperation.OriginSource.GAME_SERVER) {
-            bind(GameDataProvider.class).asEagerSingleton();
+            bind(NetGameManager.class).asEagerSingleton();
         }
     }
 }

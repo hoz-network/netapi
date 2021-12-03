@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package hoz.proto.v1.game;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data.game";
+
+import "hoz/proto/v1/game/GameTeam.proto";
+import "hoz/proto/v1/game/GameStore.proto";
+import "hoz/proto/v1/game/GameWorld.proto";
+import "hoz/proto/v1/game/GameResourceSpawner.proto";
+
+message NetGame {
+  string uuid = 1;
+  string name = 2;
+  string displayName = 3;
+
+  string configName = 4;
+
+  repeated GameTeamData teams = 5;
+  repeated GameStoreData stores = 6;
+  repeated ResourceSpawnerData spawners = 7;
+  repeated GameWorld world = 8;
+
+  int32 minPlayers = 9;
+  GameType type = 10;
+}
+
+message GameData {
+  GameType gameType = 1;
+  Type dataType = 2;
+  string name = 3;
+  string data = 4;
+
+  enum Type {
+    CONFIG = 0;
+    STORE = 2;
+    RESOURCE = 3;
+  }
+}
+
+enum GameType {
+  UNKNOWN = 0;
+  BEDWARS = 1;
+  SKYWARS = 2;
+  UHC = 3;
+  PIRATES = 4;
+  MINI_UHC = 5;
+  ANNIHILATION = 6;
+  MINI_ANNIHILATION = 7;
+
+  BUILD_BATTLE = 8;
+  SURVIVAL_GAMES = 9;
+  COOKIE_SLAP = 10;
+}

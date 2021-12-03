@@ -23,14 +23,13 @@ import org.screamingsandals.lib.player.PlayerWrapper;
 import org.screamingsandals.lib.sender.CommandSenderWrapper;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.time.Duration;
 import java.util.Locale;
 
 @Slf4j
-public class NetLangService extends LangService {
+public class NetLangManager extends LangService implements Disposable {
     @Getter
     private static final Locale FALLBACK_LOCALE = Locale.ENGLISH;
 
@@ -46,7 +45,7 @@ public class NetLangService extends LangService {
     private Disposable updateListener;
 
     @Inject
-    public NetLangService(Controllable controllable,
+    public NetLangManager(Controllable controllable,
                           NetLangServiceClient langService,
                           NetPlayerManager playerManager,
                           ClientConfig clientConfig,
@@ -58,18 +57,8 @@ public class NetLangService extends LangService {
 
         Lang.initDefault(this);
 
-        controllable.enable(() -> {
-            loadLanguages().subscribe();
-            listenForUpdates();
-        });
-
-        controllable.preDisable(() -> {
-            if (updateListener != null) {
-                updateListener.dispose();
-            }
-
-            cachedPrefixes.invalidateAll();
-        });
+        controllable.enable(this::subscribeToUpdates);
+        controllable.preDisable(this::dispose);
     }
 
     @Override
@@ -101,6 +90,15 @@ public class NetLangService extends LangService {
         }
 
         return LocaleUtils.toLocale(maybeCode.data());
+    }
+
+    @Override
+    public void dispose() {
+        if (updateListener != null) {
+            updateListener.dispose();
+        }
+
+        cachedPrefixes.invalidateAll();
     }
 
     private void register(LangData data) {
@@ -141,8 +139,8 @@ public class NetLangService extends LangService {
         updateSink.tryEmitNext(data);
     }
 
-    private Mono<Void> loadLanguages() {
-        return langService.all(Empty.getDefaultInstance())
+    private void loadLanguages() {
+        langService.all(Empty.getDefaultInstance())
                 .doOnNext(this::register)
                 .doOnComplete(() -> {
                     log.trace("All languages initialized, verifying integrity..");
@@ -163,14 +161,15 @@ public class NetLangService extends LangService {
                     log.trace("Language integrity check OK.");
                 })
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
-                .then();
+                .subscribe();
     }
 
-    private void listenForUpdates() {
+    private void subscribeToUpdates() {
         if (updateListener != null) {
             updateListener.dispose();
         }
 
+        loadLanguages();
         updateListener = langService.subscribe(Empty.getDefaultInstance())
                 .doOnNext(this::update)
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
