@@ -12,8 +12,8 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.commons.DataOperation;
 import net.hoz.api.commons.GameType;
-import net.hoz.netapi.client.grpc.LanguageClient;
-import net.hoz.netapi.client.model.NLang;
+import net.hoz.netapi.client.service.NetLangService;
+import net.hoz.netapi.client.lang.NLang;
 import net.hoz.netapi.common.command.NetCommandExceptionHandler;
 import net.hoz.netapi.common.module.NetCommonModule;
 import org.bukkit.command.CommandException;
@@ -47,7 +47,7 @@ public class PaperCommonModule extends AbstractModule {
 
     @Singleton
     @Provides
-    public CommandManager<CommandSenderWrapper> buildCommandManager(LanguageClient languageClient) throws Exception {
+    public CommandManager<CommandSenderWrapper> buildCommandManager(NetLangService netLangService) throws Exception {
 
         final var manager = new PaperScreamingCloudManager(owner,
                 AsynchronousCommandExecutionCoordinator.<CommandSenderWrapper>newBuilder().build());

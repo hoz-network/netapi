@@ -23,9 +23,8 @@ public final class DataFactory {
         add(WorldHolder.class, new WorldHolderTypeSerializer());
     }
 
-    public static <T> DataFactory add(Class<T> tClass, TypeSerializer<T> serializer) {
+    public static <T> void add(Class<T> tClass, TypeSerializer<T> serializer) {
         DATA_FACTORY.typeSerializers = DATA_FACTORY.typeSerializers.childBuilder().register(tClass, serializer).build();
-        return DATA_FACTORY;
     }
 
     public static TypeSerializerCollection getConfigurateSerializers() {

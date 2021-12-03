@@ -21,7 +21,7 @@ message GameFrameDataRequest {
 
 message GameFrameDataResponse {
   hoz.proto.data.GameFrameData data = 1;
-  resulter.proto.Result result = 2;
+  resulter.proto.GrpcResultable result = 2;
 }
 
 message GameFrameDataSaveRequest {
@@ -30,7 +30,7 @@ message GameFrameDataSaveRequest {
 
 message GameFrameDataSaveResponse {
   string uuid = 1;
-  resulter.proto.Result result = 2;
+  resulter.proto.GrpcResultable result = 2;
 }
 
 message GameIdRequest {
@@ -51,7 +51,7 @@ message RequestDefaultData {
 
 message DefaultDataResponse {
   hoz.proto.data.GameDataContainer container = 1;
-  resulter.proto.Result result = 2;
+  resulter.proto.GrpcResultable result = 2;
 }
 
 service GameDataService {

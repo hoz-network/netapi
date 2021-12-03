@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import net.hoz.api.data.game.store.StoreHolder;
 import net.hoz.api.data.storage.DataType;
 import net.hoz.netapi.client.data.DataFactory;
-import net.hoz.netapi.client.grpc.GameDataClient;
+import net.hoz.netapi.client.service.GameDataProvider;
 import net.hoz.netapi.client.util.GsonProvider;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -16,11 +16,11 @@ import java.time.Duration;
 
 public class StoreHolderSerializer implements TypeSerializer<StoreHolder> {
     private final static String IDENTIFIER_FIELD = "identifier";
-    private final GameDataClient gameDataClient;
+    private final GameDataProvider gameDataProvider;
 
     @Inject
-    public StoreHolderSerializer(GameDataClient gameDataClient) {
-        this.gameDataClient = gameDataClient;
+    public StoreHolderSerializer(GameDataProvider gameDataProvider) {
+        this.gameDataProvider = gameDataProvider;
         DataFactory.add(StoreHolder.class, this);
     }
 
@@ -31,7 +31,7 @@ public class StoreHolderSerializer implements TypeSerializer<StoreHolder> {
         }
 
         try {
-            final var storeData = gameDataClient.defaultDataIdentified(DataType.STORE, node.node(IDENTIFIER_FIELD).getString())
+            final var storeData = gameDataProvider.defaultDataIdentified(DataType.STORE, node.node(IDENTIFIER_FIELD).getString())
                     .block(Duration.ofSeconds(1));
 
             if (storeData == null) {

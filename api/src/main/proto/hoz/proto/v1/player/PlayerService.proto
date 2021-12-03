@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package hoz.proto.v1.player;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.service";
+
+import "hoz/proto/v1/data/CommonData.proto";
+import "hoz/proto/v1/player/PlayerData.proto";
+
+import "google/protobuf/empty.proto";
+import "resulter/proto/Resulter.proto";
+
+service NetPlayerService {
+  rpc dataFor(hoz.proto.v1.data.WUUID) returns (hoz.proto.v1.data.ResultableData);
+  rpc historyFor(hoz.proto.v1.data.WUUID) returns (hoz.proto.v1.data.ResultableData);
+
+  rpc playerOnline(hoz.proto.v1.data.WUUID) returns (resulter.proto.GrpcResultable);
+  rpc playerOffline(hoz.proto.v1.data.WUUID) returns (resulter.proto.GrpcResultable);
+
+  rpc updateData(hoz.proto.v1.player.NetPlayer) returns (resulter.proto.GrpcResultable);
+
+  rpc subscribeToUpdates(google.protobuf.Empty) returns (stream hoz.proto.v1.player.NetPlayer);
+}

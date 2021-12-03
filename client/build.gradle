@@ -3,7 +3,6 @@ dependencies {
     compileOnly group: 'commons-lang', name: 'commons-lang', version: COMMONS_LANG_VERSION
 
     api project(":netapi-api")
-    api project(":netapi-grpc")
 
     api group: "org.screamingsandals.lib", name: "core-common", version: SLIB_VERSION
     api group: "org.screamingsandals.lib", name: "command-common", version: SLIB_VERSION

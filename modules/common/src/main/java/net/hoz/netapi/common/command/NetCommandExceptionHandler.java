@@ -3,7 +3,7 @@ package net.hoz.netapi.common.command;
 import cloud.commandframework.exceptions.InvalidCommandSenderException;
 import cloud.commandframework.exceptions.InvalidSyntaxException;
 import lombok.extern.slf4j.Slf4j;
-import net.hoz.netapi.client.model.NLang;
+import net.hoz.netapi.client.lang.NLang;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;

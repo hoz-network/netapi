@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.screamingsandals.plugin-builder' version '1.0.58'
+    id 'org.screamingsandals.plugin-builder' version '1.0.59'
 }
 
 allprojects {
@@ -46,5 +46,9 @@ subprojects {
         api group: 'org.slf4j', name: 'slf4j-api', version: SLF4J_VERSION
     }
 
-    sourceCompatibility = JavaVersion.VERSION_17
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
 }

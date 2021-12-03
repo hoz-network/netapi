@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package hoz.proto.v1.player;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.data";
+
+import "hoz/proto/v1/data/CommonData.proto";
+import "google/protobuf/timestamp.proto";
+
+/*
+Data container that holds player data.
+*/
+message NetPlayer {
+  /*
+  Owner of this data
+  */
+  hoz.proto.v1.data.OwnableData owner = 1;
+  /*
+  Settings of this player
+  */
+  PlayerSettings settings = 2;
+  /*
+  Current state
+  */
+  PlayerState currentState = 3;
+  /*
+  If this container is empty.
+   */
+  bool isEmpty = 4;
+}
+
+message NetPlayerHistory {
+  /*
+  Owner of this data
+  */
+  hoz.proto.v1.data.OwnableData owner = 1;
+  /*
+  Saved history of the player, limited to 50 last actions
+  */
+  repeated PlayerStateHistory history = 2;
+}
+
+/*
+Data container that holds history
+ */
+message PlayerStateHistory {
+  google.protobuf.Timestamp timestamp = 1;
+  PlayerState state = 2;
+}
+
+/*
+Settings of player.
+They are here for easy control of what player can do over network
+*/
+message PlayerSettings {
+  /*
+  Key of this settings
+  */
+  enum Key {
+    ACCEPT_FRIEND_INVITES = 0;
+    ACCEPT_GUILD_INVITES = 1;
+    ACCEPT_PARTY_INVITES = 2;
+    SHOW_PLAYER_STATUS_TO_FRIENDS = 3;
+    SHOW_PLAYERS_ON_HUB = 4;
+    ANNOUNCE_JOIN = 5;
+    RANDOMIZE_USERNAME = 6;
+    RANDOMIZE_SKIN = 7;
+    INVISIBLE = 8;
+    CAN_FLY = 9;
+    SHOW_PARTICLES_ON_HUB = 10;
+    SHOW_PARTICLES_ON_OTHER_PLAYERS = 11;
+    SHOW_PLAYER_PARTICLES = 12;
+    IS_OPERATOR = 13;
+  }
+
+  map<int32, bool> settings = 1;
+  repeated PlayerRank ranks = 2;
+  string locale = 3;
+  string prefix = 4;
+  string suffix = 5;
+  string customName = 6;
+
+  string currentAddress = 7;
+  repeated string addressesHistory = 8;
+}
+
+/*
+Player state - indicates player state
+*/
+enum PlayerState {
+  OFFLINE = 0;
+  ONLINE = 1;
+}
+
+/*
+Rank of the player.
+Logic for this is implemented on servers.
+*/
+enum PlayerRank {
+  DEFAULT = 0;
+  PREMIUM = 1;
+  PREMIUM_PLUS = 2;
+  PREMIUM_PLUS_PLUS = 3;
+  PREMIUM_PLUS_INFINITE = 4;
+  TRIAL_MOD = 5;
+  MODERATOR = 6;
+  TRIAL_BUILDER = 7;
+  BUILDER = 8;
+  STAFF = 9;
+  CELEBRITY = 10;
+  DEVELOPER = 11;
+  OWNER = 12;
+}

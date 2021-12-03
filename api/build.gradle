@@ -1,5 +1,5 @@
 plugins {
-    id "com.google.protobuf" version "0.8.17"
+    id "com.google.protobuf" version "0.8.18"
 }
 
 apply plugin: "com.google.protobuf"
@@ -8,16 +8,12 @@ dependencies {
     //reactor
     api group: 'io.projectreactor', name: 'reactor-core', version: REACTOR_VERSION
 
+    //grpc
+    api group: 'io.rsocket.rpc', name: 'rsocket-rpc-core', version: RSOCKET_RPC_VERSION
+    api group: 'io.rsocket.rpc', name: 'rsocket-rpc-protobuf', version: RSOCKET_RPC_VERSION
+
     //proto
     api group: 'com.google.protobuf', name: 'protobuf-java', version: PROTOBUF_VERSION
-
-    //grpc
-    api group: 'io.grpc', name: 'grpc-api', version: GRPC_VERSION
-    api group: 'io.grpc', name: 'grpc-stub', version: GRPC_VERSION
-    api group: 'io.grpc', name: 'grpc-netty-shaded', version: GRPC_VERSION
-    api group: 'io.grpc', name: 'grpc-protobuf', version: GRPC_VERSION
-    api group: 'io.grpc', name: 'protoc-gen-grpc-java', version: GRPC_VERSION
-    api group: 'com.salesforce.servicelibs', name: 'reactor-grpc-stub', version: REACTOR_GRPC_VERSION
 
     //screamingLib
     api group: "org.screamingsandals.lib", name: "core-common", version: SLIB_VERSION
@@ -29,29 +25,38 @@ dependencies {
     api group: 'com.iamceph.resulter', name: 'resulter', version: RESULTER_VERSION
 }
 
+sourceSets.configureEach{s->
+    java {
+        srcDir project.buildDir.toPath()
+                .resolve("generatedProto")
+                .resolve(s.name)
+                .resolve("java")
+                .toFile()
+
+        srcDir project.buildDir.toPath()
+                .resolve("generatedProto")
+                .resolve(s.name)
+                .resolve("grpc")
+                .toFile()
+    }
+}
+
 protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:${PROTOBUF_VERSION}"
     }
 
     plugins {
-        grpc { artifact = "io.grpc:protoc-gen-grpc-java:${GRPC_VERSION}" }
-        reactor { artifact = "com.salesforce.servicelibs:reactor-grpc:${REACTOR_GRPC_VERSION}" }
+        rsocketRpc {
+            artifact = "io.rsocket.rpc:rsocket-rpc-protobuf:${RSOCKET_RPC_VERSION}"
+        }
     }
 
     generateProtoTasks {
         all()*.plugins {
-            grpc {}
-            reactor {}
+            rsocketRpc {}
         }
     }
-}
 
-sourceSets {
-    main {
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
-        }
-    }
+    generatedFilesBaseDir = "${project.buildDir}/generatedProto"
 }

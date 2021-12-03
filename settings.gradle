@@ -15,10 +15,6 @@ include 'api'
 project(':api').projectDir = file('api')
 project(":api").name = "netapi-api"
 
-include 'grpc'
-project(':grpc').projectDir = file('grpc')
-project(":grpc").name = "netapi-grpc"
-
 include 'client'
 project(':client').projectDir = file('client')
 project(":client").name = "netapi-client"

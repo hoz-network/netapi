@@ -7,11 +7,6 @@ option java_package = "net.hoz.api.data.storage";
 
 import "hoz/proto/Commons.proto";
 
-message LanguageDataContainer {
-  string languageCode = 1;
-  string languageData = 2;
-}
-
 message GameFrameData {
   string uuid = 1;
   string name = 2;
@@ -27,7 +22,7 @@ message GameDataContainer {
   hoz.proto.GameType gameType = 4;
 }
 
-message LocationHolderGrpc {
+message LocationHolderProto {
   double x = 1;
   double y = 2;
   double z = 3;
