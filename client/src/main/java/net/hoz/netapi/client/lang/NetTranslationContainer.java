@@ -1,9 +1,6 @@
 package net.hoz.netapi.client.lang;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import net.hoz.netapi.client.data.DataHolder;
 import org.screamingsandals.lib.lang.container.TranslationContainer;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -14,7 +11,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Data
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class NetTranslationContainer implements TranslationContainer {
     private final DataHolder dataHolder;
     @Getter

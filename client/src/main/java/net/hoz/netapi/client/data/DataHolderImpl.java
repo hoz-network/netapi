@@ -1,5 +1,7 @@
 package net.hoz.netapi.client.data;
 
+import com.iamceph.resulter.core.DataResultable;
+import com.iamceph.resulter.core.Resultable;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -15,7 +17,6 @@ final class DataHolderImpl implements DataHolder {
     DataHolderImpl(String json) throws ConfigurateException {
         this.root = build(json);
     }
-
 
     @Override
     public ConfigurationNode root() {
@@ -33,24 +34,25 @@ final class DataHolderImpl implements DataHolder {
     }
 
     @Override
-    public void update(String json) {
+    public Resultable update(String json) {
         try {
             this.root = build(json);
+            return Resultable.ok();
         } catch (ConfigurateException e) {
-            log.warn("Exception was caught during Config update! {}", e.getMessage(), e);
+            return Resultable.fail(e);
         }
     }
 
     @Override
-    public String get() {
+    public DataResultable<String> get() {
         try {
-            return GsonConfigurationLoader.builder()
+            final var data = GsonConfigurationLoader.builder()
                     .defaultOptions(options -> options.serializers(builder ->
                             builder.registerAll(DataFactory.getConfigurateSerializers())))
                     .buildAndSaveString(root);
+            return DataResultable.ok(data);
         } catch (Exception e) {
-            log.warn("Failed to save ConfigurationNode!", e);
-            return "";
+            return DataResultable.fail(e);
         }
     }
 

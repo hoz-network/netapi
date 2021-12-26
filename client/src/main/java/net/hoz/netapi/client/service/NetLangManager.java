@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.protobuf.Empty;
-import lombok.Getter;
+import com.iamceph.resulter.core.DataResultable;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.data.DataOperation;
 import net.hoz.api.data.ReactorHelper;
@@ -28,9 +28,11 @@ import reactor.core.publisher.Sinks;
 import java.time.Duration;
 import java.util.Locale;
 
+/**
+ * A service for managing languages.
+ */
 @Slf4j
 public class NetLangManager extends LangService implements Disposable {
-    @Getter
     private static final Locale FALLBACK_LOCALE = Locale.ENGLISH;
 
     private final Cache<Locale, Component> cachedPrefixes = Caffeine.newBuilder()
@@ -101,47 +103,68 @@ public class NetLangManager extends LangService implements Disposable {
         cachedPrefixes.invalidateAll();
     }
 
-    private void register(LangData data) {
-        Locale code;
+    DataResultable<Locale> resolveLocale(String localeCode) {
         try {
-            code = LocaleUtils.toLocale(data.getCode());
+            return DataResultable.ok(LocaleUtils.toLocale(localeCode));
         } catch (Exception e) {
-            log.warn("Locale {} is invalid! Using default: {}", data.getCode(), FALLBACK_LOCALE.getLanguage());
+            return DataResultable.fail(e);
+        }
+    }
+
+    DataResultable<NetTranslationContainer> buildTranslationContainer(String translationData) {
+        return DataHolder.of(translationData)
+                .map(NetTranslationContainer::new);
+    }
+
+    private void doRegister(LangData data) {
+        final var localeCode = data.getCode();
+        final var maybeLocale = resolveLocale(localeCode);
+
+        if (maybeLocale.isFail()) {
+            log.warn("Error registering locale[{}] - {}", localeCode, maybeLocale.message());
             return;
         }
 
-        log.trace("Registering new language [{}] - [{}]!", code.getLanguage(), data.getCode());
-        try {
-            final var dataHolder = DataHolder.of(data.getData());
-            final var languageHolder = new NetTranslationContainer(dataHolder, null);
+        final var locale = maybeLocale.data();
+        log.trace("Registering new language [{}] - [{}]!", locale.getLanguage(), localeCode);
 
-            containers.put(code, languageHolder);
-        } catch (Throwable e) {
-            log.warn("Exception occurred while registering language [{}]!", code, e);
+        final var container = buildTranslationContainer(data.getData());
+        if (container.isFail()) {
+            return;
         }
+
+        containers.put(locale, container.data());
         log.trace("Registered new language - [{}]", data.getCode());
     }
 
-    private void update(LangData data) {
-        final var code = LocaleUtils.toLocale(data.getCode());
-        log.trace("Received language update for code [{}]", code);
-        if (!containers.containsKey(code)) {
-            register(data);
+    private void doUpdate(LangData data) {
+        final var localeCode = data.getCode();
+        final var maybeLocale = resolveLocale(localeCode);
+
+        if (maybeLocale.isFail()) {
+            log.warn("Error registering locale[{}] - {}", localeCode, maybeLocale.message());
+            return;
+        }
+
+        final var locale = maybeLocale.data();
+        log.trace("Received language update for code [{}]", localeCode);
+        if (!containers.containsKey(locale)) {
+            doRegister(data);
 
             updateSink.tryEmitNext(data);
             return;
         }
 
-        final var container = (NetTranslationContainer) containers.get(code);
+        final var container = (NetTranslationContainer) containers.get(locale);
         container.getDataHolder().update(data.getData());
-        cachedPrefixes.invalidate(code);
+        cachedPrefixes.invalidate(locale);
 
         updateSink.tryEmitNext(data);
     }
 
     private void loadLanguages() {
         langService.all(Empty.getDefaultInstance())
-                .doOnNext(this::register)
+                .doOnNext(this::doRegister)
                 .doOnComplete(() -> {
                     log.trace("All languages initialized, verifying integrity..");
                     if (containers.containsKey(FALLBACK_LOCALE)) {
@@ -171,7 +194,7 @@ public class NetLangManager extends LangService implements Disposable {
 
         loadLanguages();
         updateListener = langService.subscribe(Empty.getDefaultInstance())
-                .doOnNext(this::update)
+                .doOnNext(this::doUpdate)
                 .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
                 .subscribe();
     }

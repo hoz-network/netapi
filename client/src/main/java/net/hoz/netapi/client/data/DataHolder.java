@@ -1,12 +1,19 @@
 package net.hoz.netapi.client.data;
 
+import com.iamceph.resulter.core.DataResultable;
+import com.iamceph.resulter.core.Resultable;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 
 public interface DataHolder {
 
-    static DataHolder of(String json) throws ConfigurateException {
-        return new DataHolderImpl(json);
+    static DataResultable<DataHolder> of(String json) {
+        try {
+            final var holder = new DataHolderImpl(json);
+            return DataResultable.ok(holder);
+        } catch (ConfigurateException e) {
+            return DataResultable.fail(e);
+        }
     }
 
     /**
@@ -26,11 +33,11 @@ public interface DataHolder {
      * Updates the root node with given data
      * @param json json input
      */
-    void update(String json);
+    Resultable update(String json);
 
     /**
      * Gets all the data to String
-     * @return
+     * @return all data in json
      */
-    String get();
+    DataResultable<String> get();
 }
