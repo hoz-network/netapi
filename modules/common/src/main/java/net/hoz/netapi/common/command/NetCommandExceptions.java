@@ -2,6 +2,7 @@ package net.hoz.netapi.common.command;
 
 import cloud.commandframework.exceptions.InvalidCommandSenderException;
 import cloud.commandframework.exceptions.InvalidSyntaxException;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.netapi.client.lang.NLang;
 import net.kyori.adventure.text.Component;
@@ -15,7 +16,8 @@ import java.io.StringWriter;
 import java.util.function.BiFunction;
 
 @Slf4j
-public class NetCommandExceptionHandler {
+@UtilityClass
+public class NetCommandExceptions {
 
     public BiFunction<CommandSenderWrapper, Exception, Component> INVALID_SYNTAX =
             (sender, e) -> Message.of(NLang.COMMON_COMMANDS_INVALID_SYNTAX)

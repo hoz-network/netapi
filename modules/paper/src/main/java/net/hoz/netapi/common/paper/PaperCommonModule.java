@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.hoz.netapi.client.config.ClientConfig;
 import net.hoz.netapi.client.service.NetLangProvider;
 import net.hoz.netapi.client.lang.NLang;
-import net.hoz.netapi.common.command.NetCommandExceptionHandler;
+import net.hoz.netapi.common.command.NetCommandExceptions;
 import net.hoz.netapi.common.module.NetCommonModule;
 import org.bukkit.command.CommandException;
 import org.bukkit.plugin.Plugin;
@@ -56,18 +56,17 @@ public class PaperCommonModule extends AbstractModule {
                     Message.of(NLang.COMMON_INTERNAL_ERROR).send(commandSender);
                 }));
 
-        final var exceptionHandler = new NetCommandExceptionHandler();
         new MinecraftExceptionHandler<CommandSenderWrapper>()
                 .withHandler(MinecraftExceptionHandler.ExceptionType.INVALID_SENDER,
-                        exceptionHandler.INVALID_SENDER)
+                        NetCommandExceptions.INVALID_SENDER)
                 .withHandler(MinecraftExceptionHandler.ExceptionType.INVALID_SYNTAX,
-                        exceptionHandler.INVALID_SYNTAX)
+                        NetCommandExceptions.INVALID_SYNTAX)
                 .withHandler(MinecraftExceptionHandler.ExceptionType.NO_PERMISSION,
-                        exceptionHandler.NO_PERMISSIONS)
+                        NetCommandExceptions.NO_PERMISSIONS)
                 .withHandler(MinecraftExceptionHandler.ExceptionType.ARGUMENT_PARSING,
-                        exceptionHandler.ARGUMENT_PARSING)
+                        NetCommandExceptions.ARGUMENT_PARSING)
                 .withHandler(MinecraftExceptionHandler.ExceptionType.COMMAND_EXECUTION,
-                        exceptionHandler.COMMAND_EXECUTION)
+                        NetCommandExceptions.COMMAND_EXECUTION)
                 .apply(manager, input -> input);
 
         return manager;
