@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group 'net.hoz'
-    version '2.0.0-SNAPSHOT'
+    version '3.0.0-SNAPSHOT'
 }
 
 subprojects {
@@ -17,22 +17,7 @@ subprojects {
     repositories {
         mavenCentral()
         maven {
-            url = "https://repo.screamingsandals.org/public/"
-        }
-
-        if (System.getenv("hoz_internal_token") != null) {
-            maven {
-                url = "https://repo.hoznet.dev/internal"
-                name = "hoz-internal"
-
-                credentials(HttpHeaderCredentials) {
-                    name = 'Private-Token'
-                    value = System.getenv("hoz_internal_token")
-                }
-                authentication {
-                    header(HttpHeaderAuthentication)
-                }
-            }
+            url = "https://repo.screamingsandals.org/snapshots/"
         }
     }
 

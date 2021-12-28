@@ -9,11 +9,14 @@ import com.iamceph.resulter.core.Resultable;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
-import net.hoz.api.data.*;
+import net.hoz.api.data.NetPlayer;
+import net.hoz.api.data.NetPlayerHistory;
+import net.hoz.api.data.PlayerSettings;
+import net.hoz.api.data.WUUID;
 import net.hoz.api.service.NetPlayerServiceClient;
+import net.hoz.api.util.Packeto;
 import net.hoz.api.util.ReactorHelper;
 import net.hoz.netapi.client.util.NetUtils;
-import net.hoz.netapi.client.util.Unpacker;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
@@ -97,17 +100,14 @@ public class NetPlayerProvider implements Disposable {
      * @param uuid
      * @return
      */
-    public Mono<NetPlayer> getPlayerNow(UUID uuid) {
+    public Mono<DataResultable<NetPlayer>> loadPlayer(UUID uuid) {
         return netPlayerService.dataFor(WUUID.newBuilder()
                         .setValue(uuid.toString())
                         .build())
                 .filter(ReactorHelper.filterResult(log))
-                .map(response -> {
-                    final var netPlayer = Unpacker.unpackUnsafe(response.getData(), NetPlayer.class);
-                    playerCache.put(uuid, netPlayer);
-
-                    return netPlayer;
-                })
+                .map(data -> Packeto.unpack(data, NetPlayer.class))
+                .doOnNext(result ->
+                        result.ifOk(data -> playerCache.put(uuid, data)))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
@@ -117,17 +117,14 @@ public class NetPlayerProvider implements Disposable {
      * @param uuid
      * @return
      */
-    public Mono<NetPlayerHistory> getHistoryNow(UUID uuid) {
+    public Mono<DataResultable<NetPlayerHistory>> loadPlayerHistory(UUID uuid) {
         return netPlayerService.historyFor(WUUID.newBuilder()
                         .setValue(uuid.toString())
                         .build())
                 .filter(ReactorHelper.filterResult(log))
-                .map(response -> {
-                    final var netPlayerHistory = Unpacker.unpackUnsafe(response.getData(), NetPlayerHistory.class);
-                    historyCache.put(uuid, netPlayerHistory);
-
-                    return netPlayerHistory;
-                })
+                .map(data -> Packeto.unpack(data, NetPlayerHistory.class))
+                .doOnNext(result ->
+                        result.ifOk(data -> historyCache.put(uuid, data)))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
@@ -185,8 +182,10 @@ public class NetPlayerProvider implements Disposable {
         }
 
         private Mono<Boolean> forKeyUncached(UUID uuid, PlayerSettings.Key key) {
-            return client.getPlayerNow(uuid)
+            return client.loadPlayer(uuid)
+                    .filter(DataResultable::isOk)
                     .map(netPlayer -> netPlayer
+                            .data()
                             .getSettings()
                             .getSettingsMap()
                             .get(key.getNumber()))

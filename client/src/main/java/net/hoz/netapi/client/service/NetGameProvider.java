@@ -15,9 +15,9 @@ import net.hoz.api.data.game.NetGame;
 import net.hoz.api.data.game.StoreHolder;
 import net.hoz.api.service.GameServiceClient;
 import net.hoz.api.service.MGameType;
+import net.hoz.api.util.Packeto;
 import net.hoz.api.util.ReactorHelper;
 import net.hoz.netapi.client.config.ClientConfig;
-import net.hoz.netapi.client.util.Unpacker;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -28,6 +28,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Provider for {@link NetGame} and other game-related data.
+ * <p>
+ * This provider communicates with our BAGR backend heavily and when the provider is initialized,
+ * it asks BAGR about all data related to given {@link net.hoz.api.data.GameType}.
+ */
 @Slf4j
 public class NetGameProvider implements Disposable {
     /**
@@ -58,18 +64,26 @@ public class NetGameProvider implements Disposable {
     @Getter
     private final Cache<String, GameSpawnerTypeHolder> spawnerCache = Caffeine.newBuilder()
             .build();
-
-    private final ClientConfig clientConfig;
+    /**
+     * RSocket service for communicating with BAGR.
+     */
     private final GameServiceClient gameService;
-
+    /**
+     * A {@link net.hoz.api.data.GameType} message for protobuf.
+     */
     private final MGameType gameTypeMessage;
 
+    /**
+     * Main constructor.
+     * @param gameService RSocket game client.
+     * @param controllable controllable
+     * @param clientConfig
+     */
     @Inject
     public NetGameProvider(GameServiceClient gameService,
                            Controllable controllable,
                            ClientConfig clientConfig) {
         this.gameService = gameService;
-        this.clientConfig = clientConfig;
         this.gameTypeMessage = MGameType.newBuilder().setType(clientConfig.gameType()).build();
 
         controllable.enable(() -> {
@@ -269,9 +283,12 @@ public class NetGameProvider implements Disposable {
     protected Mono<DataResultable<NetGame>> doGameLoading(Mono<ResultableData> loadingMono) {
         return loadingMono
                 .filter(ReactorHelper.filterResult(log))
-                .map(result -> Unpacker.unpackSafe(result.getData(), NetGame.class))
-                .doOnNext(next -> next.ifOk(game ->
-                        log.debug("Received game [{}] - [{}] for GameType[{}]", game.getName(), game.getUuid(), game.getType())))
+                .map(result -> Packeto.unpack(result.getData(), NetGame.class))
+                .doOnNext(next -> next.ifOk(game -> {
+                    final var uuid = UUID.fromString(game.getUuid());
+                    log.debug("Received game [{}] - [{}] for GameType[{}]", game.getName(), uuid, game.getType());
+                    gameCache.put(uuid, game);
+                }))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 

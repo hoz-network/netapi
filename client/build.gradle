@@ -8,6 +8,7 @@ dependencies {
     api group: 'io.rsocket', name: 'rsocket-transport-netty', version: RSOCKET_VERSION
 
     api group: "org.screamingsandals.lib", name: "core-common", version: SLIB_VERSION
+    api group: "org.screamingsandals.lib", name: "utils-common", version: SLIB_VERSION
     api group: "org.screamingsandals.lib", name: "command-common", version: SLIB_VERSION
     api group: "org.screamingsandals.lib", name: "lang", version: SLIB_VERSION
 
