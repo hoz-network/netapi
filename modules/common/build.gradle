@@ -1,6 +1,6 @@
 ScreamingLibBuilder()
         .platforms('common')
-        .modules('core', 'command', 'tasker', 'hologram', 'placeholders', 'sidebar', 'healthindicator', 'npc')
+        .modules('core', 'command', 'hologram', 'placeholders', 'sidebar', 'healthindicator', 'npc')
         .version(SLIB_VERSION)
         .simpleInventories(SIMPLE_INVENTORIES_VERSION)
         .enableAnnotationProcessor()

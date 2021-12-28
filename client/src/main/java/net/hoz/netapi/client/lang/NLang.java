@@ -1,6 +1,6 @@
 package net.hoz.netapi.client.lang;
 
-import net.hoz.api.data.game.GameType;
+import net.hoz.api.data.GameType;
 import org.screamingsandals.lib.lang.Translation;
 
 import java.util.Locale;

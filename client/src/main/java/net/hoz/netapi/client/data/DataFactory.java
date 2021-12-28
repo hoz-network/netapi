@@ -13,6 +13,7 @@ import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 import java.util.HashMap;
 import java.util.Map;
 
+//TODO: this should be probably removed.
 @NoArgsConstructor
 public final class DataFactory {
     private static final DataFactory DATA_FACTORY = new DataFactory();

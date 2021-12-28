@@ -7,7 +7,7 @@ ScreamingLibBuilder()
         .build()
 
 dependencies {
-    compileOnly purpur()
+    compileOnly paper()
 
     api project(":netapi-common")
     api group: 'cloud.commandframework', name: 'cloud-minecraft-extras', version: CLOUD_VERSION

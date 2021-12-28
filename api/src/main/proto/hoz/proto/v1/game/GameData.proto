@@ -5,6 +5,9 @@ package hoz.proto.v1.game;
 option java_multiple_files = true;
 option java_package = "net.hoz.api.data.game";
 
+import "sandals.proto.v1/Tasker.proto";
+
+import "hoz/proto/v1/data/CommonData.proto";
 import "hoz/proto/v1/game/GameTeam.proto";
 import "hoz/proto/v1/game/GameStore.proto";
 import "hoz/proto/v1/game/GameWorld.proto";
@@ -23,33 +26,42 @@ message NetGame {
   repeated GameWorld world = 8;
 
   int32 minPlayers = 9;
-  GameType type = 10;
+  hoz.proto.v1.data.GameType type = 10;
+  GameConfigHolder customConfig = 11;
 }
 
-message GameData {
-  GameType gameType = 1;
-  Type dataType = 2;
-  string name = 3;
-  string data = 4;
+message GameConfigHolder {
+  string name = 1;
+  hoz.proto.v1.data.GameType type = 2;
 
-  enum Type {
-    CONFIG = 0;
-    STORE = 2;
-    RESOURCE = 3;
+  Tick tick = 3;
+  Times times = 4;
+  Enabled enabled = 5;
+  Spawners spawners = 6;
+
+  message Tick {
+    sandals.proto.v1.ProtoTaskerTime unit = 1;
+    int32 speed = 2;
   }
-}
 
-enum GameType {
-  UNKNOWN = 0;
-  BEDWARS = 1;
-  SKYWARS = 2;
-  UHC = 3;
-  PIRATES = 4;
-  MINI_UHC = 5;
-  ANNIHILATION = 6;
-  MINI_ANNIHILATION = 7;
+  message Times {
+    int32 start = 1;
+    int32 inGame = 2;
+    int32 deathMatch = 3;
+    int32 end = 4;
+  }
 
-  BUILD_BATTLE = 8;
-  SURVIVAL_GAMES = 9;
-  COOKIE_SLAP = 10;
+  message Enabled {
+    bool teams = 1;
+    bool stores = 2;
+    bool spectators = 3;
+    bool spawners = 4;
+    bool arenaSpawn = 5;
+    bool crafting = 6;
+  }
+
+  message Spawners {
+    bool stopIfTeamIsDead = 1;
+    bool addItemsToInventory = 2;
+  }
 }

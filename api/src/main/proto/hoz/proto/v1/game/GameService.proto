@@ -7,30 +7,31 @@ option java_package = "net.hoz.api.service";
 
 import "hoz/proto/v1/data/CommonData.proto";
 import "hoz/proto/v1/game/GameData.proto";
+import "hoz/proto/v1/game/GameStore.proto";
+import "hoz/proto/v1/game/GameResourceSpawner.proto";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "resulter/proto/Resulter.proto";
 
 message MGameType {
- GameType type = 1;
-}
-
-message MGameData {
-  GameData.Type dataType = 1;
-  GameType gameType = 2;
+  hoz.proto.v1.data.GameType type = 1;
 }
 
 service GameService {
   rpc oneByName(google.protobuf.StringValue) returns (hoz.proto.v1.data.ResultableData);
   rpc oneById(hoz.proto.v1.data.WUUID) returns (hoz.proto.v1.data.ResultableData);
 
-  rpc all(MGameType) returns (stream hoz.proto.v1.data.ResultableData);
-  rpc allData(MGameData) returns (stream hoz.proto.v1.data.ResultableData);
+  rpc all(MGameType) returns (stream hoz.proto.v1.game.NetGame);
 
-  rpc saveGame(hoz.proto.v1.game.NetGame) returns (stream hoz.proto.v1.data.ResultableData);
-  rpc saveData(hoz.proto.v1.game.GameData) returns (stream hoz.proto.v1.data.ResultableData);
+  rpc allConfigs(MGameType) returns (stream hoz.proto.v1.game.GameConfigHolder);
+  rpc allStores(MGameType) returns (stream hoz.proto.v1.game.StoreHolder);
+  rpc allSpawnerTypes(MGameType) returns (stream hoz.proto.v1.game.GameSpawnerTypeHolder);
 
-  rpc subscribeForNetGameUpdate(MGameType) returns (stream hoz.proto.v1.game.NetGame);
-  rpc subscribeForNetGameDataUpdate(MGameType) returns (stream hoz.proto.v1.game.GameData);
+  rpc saveGame(hoz.proto.v1.game.NetGame) returns (hoz.proto.v1.data.ResultableData);
+
+  rpc subscribeForGameUpdates(MGameType) returns (stream hoz.proto.v1.game.NetGame);
+  rpc subscribeForConfigUpdates(MGameType) returns (stream hoz.proto.v1.game.GameConfigHolder);
+  rpc subscribeForStoreUpdates(MGameType) returns (stream hoz.proto.v1.game.GameSpawnerTypeHolder);
+  rpc subscribeForSpawnerUpdates(MGameType) returns (stream hoz.proto.v1.game.StoreHolder);
 }

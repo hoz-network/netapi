@@ -8,11 +8,13 @@ import org.spongepowered.configurate.ConfigurationNode;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Data
 @RequiredArgsConstructor
 public class NetTranslationContainer implements TranslationContainer {
+    private final Locale locale;
     private final DataHolder dataHolder;
     @Getter
     @Setter

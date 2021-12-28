@@ -10,9 +10,8 @@ import com.google.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.hoz.api.data.DataOperation;
-import net.hoz.api.data.game.GameType;
-import net.hoz.netapi.client.service.NetLangManager;
+import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.service.NetLangProvider;
 import net.hoz.netapi.client.lang.NLang;
 import net.hoz.netapi.common.command.NetCommandExceptionHandler;
 import net.hoz.netapi.common.module.NetCommonModule;
@@ -26,15 +25,14 @@ import org.screamingsandals.lib.sender.CommandSenderWrapper;
 @RequiredArgsConstructor
 public class PaperCommonModule extends AbstractModule {
     private final Plugin owner;
-    private final GameType gameType;
-    private final DataOperation.OriginSource source;
+    private final ClientConfig clientConfig;
     private final String commandName;
 
     @SneakyThrows
     @Override
     protected void configure() {
         bind(Plugin.class).toInstance(owner);
-        install(new NetCommonModule(gameType, source));
+        install(new NetCommonModule(clientConfig));
     }
 
     @Singleton
@@ -47,7 +45,7 @@ public class PaperCommonModule extends AbstractModule {
 
     @Singleton
     @Provides
-    public CommandManager<CommandSenderWrapper> buildCommandManager(NetLangManager netLangManager) throws Exception {
+    public CommandManager<CommandSenderWrapper> buildCommandManager(NetLangProvider netLangProvider) throws Exception {
 
         final var manager = new PaperScreamingCloudManager(owner,
                 AsynchronousCommandExecutionCoordinator.<CommandSenderWrapper>newBuilder().build());

@@ -5,30 +5,30 @@ package hoz.proto.v1.game;
 option java_multiple_files = true;
 option java_package = "net.hoz.api.data.game";
 
+import "hoz/proto/v1/data/CommonData.proto";
 import "sandals.proto.v1/Location.proto";
 import "sandals.proto.v1/Tasker.proto";
-import "hoz/proto/v1/data/CommonData.proto";
 
 message ResourceSpawnerData {
   string uuid = 1;
-  string type = 2;
+  string spawnerTypeName = 2;
   string teamName = 3;
 
-  sandals.proto.v1.WrappedLocation location = 4;
+  sandals.proto.v1.ProtoLocation location = 4;
 
   double spread = 5;
   int32 maxSpawnAmount = 6;
   int32 spawnAmount = 7;
   int32 spawnPeriod = 8;
-  sandals.proto.v1.WrappedTaskerTime spawnTime = 9;
+  sandals.proto.v1.ProtoLocation spawnTime = 9;
 
   bool withHologram = 10;
   bool useGlobalValues = 11;
 
-  map<string, string> customData = 13;
+  map<string, string> customData = 100;
 }
 
-message GameResourceSpawnerType {
+message GameSpawnerTypeHolder {
   string name = 1;
   string langKey = 2;
   string material = 3;
@@ -38,5 +38,7 @@ message GameResourceSpawnerType {
   int32 maxSpawnAmount = 6;
   int32 spawnAmount = 7;
   int32 spawnPeriod = 8;
-  sandals.proto.v1.WrappedTaskerTime spawnTime = 9;
+  sandals.proto.v1.ProtoLocation spawnTime = 9;
+
+  hoz.proto.v1.data.GameType type = 10;
 }

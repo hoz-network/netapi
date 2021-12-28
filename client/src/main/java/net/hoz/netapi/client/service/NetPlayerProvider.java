@@ -11,23 +11,38 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.data.*;
 import net.hoz.api.service.NetPlayerServiceClient;
+import net.hoz.api.util.ReactorHelper;
+import net.hoz.netapi.client.util.NetUtils;
 import net.hoz.netapi.client.util.Unpacker;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Service for managing generally players.
+ */
 @Slf4j
-public class NetPlayerManager implements Disposable {
+public class NetPlayerProvider implements Disposable {
+    /**
+     * Cache of the player data.
+     */
     private final Cache<UUID, NetPlayer> playerCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(30))
             .build();
+    /**
+     * Cache of the player history.
+     */
     private final Cache<UUID, NetPlayerHistory> historyCache = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(30))
             .build();
 
+    /**
+     * RSocket service.
+     */
     private final NetPlayerServiceClient netPlayerService;
 
     @Accessors(fluent = true)
@@ -37,8 +52,8 @@ public class NetPlayerManager implements Disposable {
     private Disposable updateListener;
 
     @Inject
-    public NetPlayerManager(NetPlayerServiceClient netPlayerService,
-                            Controllable controllable) {
+    public NetPlayerProvider(NetPlayerServiceClient netPlayerService,
+                             Controllable controllable) {
         this.netPlayerService = netPlayerService;
         this.settings = new Settings(this);
 
@@ -56,44 +71,67 @@ public class NetPlayerManager implements Disposable {
         historyCache.invalidateAll();
     }
 
-    public DataResultable<NetPlayer> getDataCached(UUID uuid) {
+    /**
+     * Tries to get the {@link NetPlayer} from the cache.
+     *
+     * @param uuid ID of the player
+     * @return {@link DataResultable} result of the operation.
+     */
+    public DataResultable<NetPlayer> getPlayer(UUID uuid) {
         return DataResultable.failIfNull(playerCache.getIfPresent(uuid));
     }
 
-    public Mono<DataResultable<NetPlayer>> getData(UUID uuid) {
-        final var data = playerCache.getIfPresent(uuid);
-        if (data != null) {
-            return Mono.just(DataResultable.ok(data));
-        }
+    /**
+     * Tries to get the {@link NetPlayerHistory} from the cache.
+     *
+     * @param uuid ID of the player
+     * @return {@link DataResultable} result of the operation.
+     */
+    public DataResultable<NetPlayerHistory> getHistory(UUID uuid) {
+        return DataResultable.failIfNull(historyCache.getIfPresent(uuid));
+    }
 
+    /**
+     * Tries to get the {@link NetPlayer} data container from the BAGR instance.
+     *
+     * @param uuid
+     * @return
+     */
+    public Mono<NetPlayer> getPlayerNow(UUID uuid) {
         return netPlayerService.dataFor(WUUID.newBuilder()
                         .setValue(uuid.toString())
                         .build())
-                .onErrorResume(ex -> ReactorHelper.monoError(ex, log))
                 .filter(ReactorHelper.filterResult(log))
                 .map(response -> {
                     final var netPlayer = Unpacker.unpackUnsafe(response.getData(), NetPlayer.class);
                     playerCache.put(uuid, netPlayer);
 
-                    return DataResultable.ok(netPlayer);
-                });
+                    return netPlayer;
+                })
+                .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
-    public Mono<DataResultable<NetPlayerHistory>> getHistory(UUID uuid) {
+    /**
+     * Tries to get the {@link NetPlayerHistory} data container from the BAGR instance.
+     *
+     * @param uuid
+     * @return
+     */
+    public Mono<NetPlayerHistory> getHistoryNow(UUID uuid) {
         return netPlayerService.historyFor(WUUID.newBuilder()
                         .setValue(uuid.toString())
                         .build())
-                .onErrorResume(ex -> ReactorHelper.monoError(ex, log))
                 .filter(ReactorHelper.filterResult(log))
                 .map(response -> {
                     final var netPlayerHistory = Unpacker.unpackUnsafe(response.getData(), NetPlayerHistory.class);
                     historyCache.put(uuid, netPlayerHistory);
 
-                    return DataResultable.ok(netPlayerHistory);
-                });
+                    return netPlayerHistory;
+                })
+                .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
-    public Mono<Resultable> updateData(UUID uuid, NetPlayer netPlayer) {
+    public Mono<Resultable> updateData(NetPlayer netPlayer) {
         return netPlayerService.updateData(netPlayer)
                 .map(Resultable::convert)
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
@@ -115,12 +153,12 @@ public class NetPlayerManager implements Disposable {
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
-    public DataResultable<String> getLangCode(UUID uuid) {
-        final var data = getDataCached(uuid);
+    public DataResultable<Locale> resolveLocale(UUID uuid) {
+        final var data = getPlayer(uuid);
         if (data.isFail()) {
             return data.transform();
         }
-        return DataResultable.ok(data.data().getSettings().getLocale());
+        return NetUtils.resolveLocale(data.data().getSettings().getLocale());
     }
 
     private void subscribeToUpdates() {
@@ -137,28 +175,22 @@ public class NetPlayerManager implements Disposable {
                 });
     }
 
-    public record Settings(NetPlayerManager client) {
+    public record Settings(NetPlayerProvider client) {
         public Mono<Boolean> forKey(UUID uuid, PlayerSettings.Key key) {
             return Mono.fromSupplier(() -> client.playerCache.getIfPresent(uuid))
                     .map(next -> next.getSettings()
                             .getSettingsMap()
                             .get(key.getNumber()))
-                    .switchIfEmpty(getNonCached(uuid, key));
+                    .switchIfEmpty(forKeyUncached(uuid, key));
         }
 
-        private Mono<Boolean> getNonCached(UUID uuid, PlayerSettings.Key key) {
-            return client.getData(uuid)
-                    .map(result -> {
-                        if (result.isOk()) {
-                            return result.data()
-                                    .getSettings()
-                                    .getSettingsMap()
-                                    .get(key.getNumber());
-                        }
-
-                        log.warn("Getting settings[{}] for player[{}] failed: {}", key, uuid, result.message());
-                        return false;
-                    });
+        private Mono<Boolean> forKeyUncached(UUID uuid, PlayerSettings.Key key) {
+            return client.getPlayerNow(uuid)
+                    .map(netPlayer -> netPlayer
+                            .getSettings()
+                            .getSettingsMap()
+                            .get(key.getNumber()))
+                    .defaultIfEmpty(false);
         }
     }
 }

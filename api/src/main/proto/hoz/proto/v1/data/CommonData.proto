@@ -131,3 +131,18 @@ enum MinecraftColor {
   YELLOW = 14;
   WHITE = 15;
 }
+
+enum GameType {
+  UNKNOWN = 0;
+  BEDWARS = 1;
+  SKYWARS = 2;
+  UHC = 3;
+  PIRATES = 4;
+  MINI_UHC = 5;
+  ANNIHILATION = 6;
+  MINI_ANNIHILATION = 7;
+
+  BUILD_BATTLE = 8;
+  SURVIVAL_GAMES = 9;
+  COOKIE_SLAP = 10;
+}

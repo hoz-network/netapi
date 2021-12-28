@@ -5,18 +5,79 @@ package hoz.proto.v1.game;
 option java_multiple_files = true;
 option java_package = "net.hoz.api.data.game";
 
+import "hoz/proto/v1/data/CommonData.proto";
 import "sandals.proto.v1/Location.proto";
 
 message GameStoreData {
   string name = 1;
-  string holderName = 2;
+  string storeName = 2;
   string teamName = 3;
 
-  sandals.proto.v1.WrappedLocation location = 4;
+  sandals.proto.v1.ProtoLocation location = 4;
 
   string entityType = 5;
   string entityModifier = 6;
   bool baby = 7;
 
-  map<string, string> customData = 8;
+  map<string, string> customData = 100;
+}
+
+message StoreHolder {
+  repeated StoreCategory categories = 1;
+  repeated StoreQuickBuySlot quickBuySlots = 2;
+
+  string name = 3;
+  string storeNameKey = 4;
+  StoreItem decorativeItem = 5;
+  int32 rows = 6;
+
+  hoz.proto.v1.data.GameType type = 8;
+}
+
+message StoreCategory {
+  StoreItem categoryItem = 1;
+  repeated StoreItem items = 2;
+  repeated StoreUpgrade upgrades = 3;
+}
+
+message StoreItem {
+  repeated StorePrice prices = 1;
+
+  StoreLocation location = 2;
+  string name = 3;
+
+  //TODO: add item here from sandals
+
+  string langNameKey = 4;
+  string langLoreKey = 5;
+}
+
+message StoreUpgrade {
+  repeated Tier tiers = 1;
+  string name = 2;
+
+  message Tier {
+    repeated StorePrice prices = 1;
+    StoreItem item = 2;
+    int32 position = 3;
+
+    map<string, string> customData = 4;
+  }
+}
+
+message StorePrice {
+  string currencyName = 1;
+  double count = 2;
+}
+
+message StoreLocation {
+  int32 row = 1;
+  int32 column = 2;
+}
+
+message StoreQuickBuySlot {
+  string categoryName = 1;
+  string itemName = 2;
+  StoreLocation location = 3;
+  bool decorative = 4;
 }

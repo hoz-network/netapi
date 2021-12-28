@@ -1,4 +1,4 @@
-package net.hoz.api.data;
+package net.hoz.api.util;
 
 import com.google.protobuf.GeneratedMessageV3;
 import com.iamceph.resulter.core.Resultable;
@@ -57,23 +57,25 @@ public class ReactorHelper {
      */
     public <T extends GeneratedMessageV3> Predicate<T> filterResult(Logger log) {
         return t -> {
+            final var name = t.getClass().getSimpleName();
+
             try {
                 final var descriptor = t.getDescriptorForType().findFieldByName("result");
                 final var result = t.getField(descriptor);
 
                 if (result == null || result.getClass().isInstance(GrpcResultable.class)) {
-                    log.warn("Result was not found in message - {} - {}", t.getClass().getSimpleName(), t);
+                    log.warn("Result was not found in message - {} - {}", name, t);
                     return true;
                 }
 
                 final var resultable = Resultable.convert(result);
                 if (resultable.isFail() || resultable.isWarning()) {
-                    log.warn("Resultable is not OK -> {}", resultable);
+                    log.warn("Resultable[{}] is not OK -> {}",  name, resultable);
                     return false;
                 }
                 return true;
             } catch (Exception e) {
-                log.warn("Cannot find Result in message - {} - {}", t.getClass().getSimpleName(), t);
+                log.warn("Cannot find Result in message - {} - {}", name, t);
                 return true;
             }
         };
