@@ -10,7 +10,7 @@ import com.google.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.config.DataConfig;
 import net.hoz.netapi.client.service.NetLangProvider;
 import net.hoz.netapi.client.lang.NLang;
 import net.hoz.netapi.common.command.NetCommandExceptions;
@@ -25,7 +25,7 @@ import org.screamingsandals.lib.sender.CommandSenderWrapper;
 @RequiredArgsConstructor
 public class PaperCommonModule extends AbstractModule {
     private final Plugin owner;
-    private final ClientConfig clientConfig;
+    private final DataConfig clientConfig;
     private final String commandName;
 
     @SneakyThrows

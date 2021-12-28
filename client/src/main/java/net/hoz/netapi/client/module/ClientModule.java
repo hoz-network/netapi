@@ -4,14 +4,14 @@ import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
 import net.hoz.api.data.DataOperation;
 import net.hoz.api.data.GameType;
-import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.config.DataConfig;
 import net.hoz.netapi.client.service.NetGameProvider;
 import net.hoz.netapi.client.service.NetLangProvider;
 import net.hoz.netapi.client.service.NetPlayerProvider;
 
 @RequiredArgsConstructor
 public class ClientModule extends AbstractModule {
-   private final ClientConfig clientConfig;
+   private final DataConfig clientConfig;
 
     @Override
     protected void configure() {

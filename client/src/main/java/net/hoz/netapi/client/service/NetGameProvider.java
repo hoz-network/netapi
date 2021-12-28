@@ -17,7 +17,7 @@ import net.hoz.api.service.GameServiceClient;
 import net.hoz.api.service.MGameType;
 import net.hoz.api.util.Packeto;
 import net.hoz.api.util.ReactorHelper;
-import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.config.DataConfig;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -75,14 +75,15 @@ public class NetGameProvider implements Disposable {
 
     /**
      * Main constructor.
-     * @param gameService RSocket game client.
+     *
+     * @param gameService  RSocket game client.
      * @param controllable controllable
-     * @param clientConfig
+     * @param clientConfig simple configuration
      */
     @Inject
     public NetGameProvider(GameServiceClient gameService,
                            Controllable controllable,
-                           ClientConfig clientConfig) {
+                           DataConfig clientConfig) {
         this.gameService = gameService;
         this.gameTypeMessage = MGameType.newBuilder().setType(clientConfig.gameType()).build();
 
@@ -95,7 +96,7 @@ public class NetGameProvider implements Disposable {
 
     @Override
     public void dispose() {
-
+        //TODO: handle destroying too
     }
 
     /**
@@ -294,6 +295,7 @@ public class NetGameProvider implements Disposable {
 
     /**
      * Loads all cacheable values from the backend.
+     * The order shouldn't be important at all.
      */
     protected void createDataCache() {
         loadGames()

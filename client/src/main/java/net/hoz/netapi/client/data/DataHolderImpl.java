@@ -46,20 +46,15 @@ final class DataHolderImpl implements DataHolder {
     @Override
     public DataResultable<String> get() {
         try {
-            final var data = GsonConfigurationLoader.builder()
-                    .defaultOptions(options -> options.serializers(builder ->
-                            builder.registerAll(DataFactory.getConfigurateSerializers())))
-                    .buildAndSaveString(root);
-            return DataResultable.ok(data);
+            return DataResultable.failIfNull(GsonConfigurationLoader.builder().buildAndSaveString(root));
         } catch (Exception e) {
             return DataResultable.fail(e);
         }
     }
 
     private ConfigurationNode build(String json) throws ConfigurateException {
-        return GsonConfigurationLoader.builder()
-                .defaultOptions(options -> options.serializers(builder ->
-                        builder.registerAll(DataFactory.getConfigurateSerializers())))
+        return GsonConfigurationLoader
+                .builder()
                 .buildAndLoadString(json);
     }
 }

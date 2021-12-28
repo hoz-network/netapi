@@ -10,7 +10,7 @@ import net.hoz.api.data.DataOperation;
 import net.hoz.api.service.GameServiceClient;
 import net.hoz.api.service.NetLangServiceClient;
 import net.hoz.api.service.NetPlayerServiceClient;
-import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.config.DataConfig;
 import reactor.core.publisher.Mono;
 import reactor.netty.tcp.TcpClient;
 import reactor.util.retry.Retry;
@@ -20,9 +20,9 @@ import java.time.Duration;
 //TODO
 @Slf4j
 public class RSocketModule extends AbstractModule {
-    private final ClientConfig clientConfig;
+    private final DataConfig clientConfig;
 
-    public RSocketModule(ClientConfig clientConfig) {
+    public RSocketModule(DataConfig clientConfig) {
         this.clientConfig = clientConfig;
     }
 

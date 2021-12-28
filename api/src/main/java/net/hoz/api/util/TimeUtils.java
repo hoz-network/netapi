@@ -4,7 +4,13 @@ import com.google.protobuf.Timestamp;
 import lombok.experimental.UtilityClass;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
+/**
+ * Utility class for converting {@link Instant} into {@link Timestamp} and via versa.
+ */
 @UtilityClass
 public class TimeUtils {
 

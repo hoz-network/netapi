@@ -10,7 +10,7 @@ import net.hoz.api.data.DataOperation;
 import net.hoz.api.util.ReactorHelper;
 import net.hoz.api.service.LangData;
 import net.hoz.api.service.NetLangServiceClient;
-import net.hoz.netapi.client.config.ClientConfig;
+import net.hoz.netapi.client.config.DataConfig;
 import net.hoz.netapi.client.data.DataHolder;
 import net.hoz.netapi.client.lang.NLang;
 import net.hoz.netapi.client.lang.NetTranslationContainer;
@@ -50,7 +50,7 @@ public class NetLangProvider extends LangService implements Disposable {
 
     private final NetLangServiceClient langService;
     private final NetPlayerProvider playerManager;
-    private final ClientConfig clientConfig;
+    private final DataConfig clientConfig;
 
     /**
      * A {@link Many} sink for new language data updates.
@@ -64,7 +64,7 @@ public class NetLangProvider extends LangService implements Disposable {
     @Inject
     public NetLangProvider(NetLangServiceClient langService,
                            NetPlayerProvider playerManager,
-                           ClientConfig clientConfig,
+                           DataConfig clientConfig,
                            Many<LangData> updatesSink,
                            Controllable controllable) {
         this.langService = langService;
