@@ -5,21 +5,21 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import com.iamceph.resulter.core.DataResultable;
+import com.iamceph.resulter.core.Resultable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.hoz.api.Controlled;
 import net.hoz.api.data.ResultableData;
 import net.hoz.api.data.WUUID;
 import net.hoz.api.data.game.GameConfigHolder;
 import net.hoz.api.data.game.GameSpawnerTypeHolder;
 import net.hoz.api.data.game.NetGame;
 import net.hoz.api.data.game.StoreHolder;
-import net.hoz.api.service.GameServiceClient;
 import net.hoz.api.service.MGameType;
+import net.hoz.api.service.NetGameServiceClient;
 import net.hoz.api.util.Packeto;
 import net.hoz.api.util.ReactorHelper;
 import net.hoz.netapi.client.config.DataConfig;
-import org.screamingsandals.lib.utils.Controllable;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * it asks BAGR about all data related to given {@link net.hoz.api.data.GameType}.
  */
 @Slf4j
-public class NetGameProvider implements Disposable {
+public class NetGameProvider implements Controlled {
     /**
      * Stores name-to-uuid values for games.
      */
@@ -67,7 +67,7 @@ public class NetGameProvider implements Disposable {
     /**
      * RSocket service for communicating with BAGR.
      */
-    private final GameServiceClient gameService;
+    private final NetGameServiceClient gameService;
     /**
      * A {@link net.hoz.api.data.GameType} message for protobuf.
      */
@@ -77,21 +77,21 @@ public class NetGameProvider implements Disposable {
      * Main constructor.
      *
      * @param gameService  RSocket game client.
-     * @param controllable controllable
      * @param clientConfig simple configuration
      */
     @Inject
-    public NetGameProvider(GameServiceClient gameService,
-                           Controllable controllable,
+    public NetGameProvider(NetGameServiceClient gameService,
                            DataConfig clientConfig) {
         this.gameService = gameService;
-        this.gameTypeMessage = MGameType.newBuilder().setType(clientConfig.gameType()).build();
+        this.gameTypeMessage = MGameType.newBuilder()
+                .setType(clientConfig.gameType())
+                .build();
+    }
 
-        controllable.enable(() -> {
-            subscribeForUpdates();
-            createDataCache();
-        });
-        controllable.preDisable(this::dispose);
+    @Override
+    public void initialize() {
+        subscribeForUpdates();
+        createDataCache();
     }
 
     @Override
@@ -226,13 +226,32 @@ public class NetGameProvider implements Disposable {
     public Mono<DataResultable<UUID>> saveGame(NetGame netGame) {
         //TODO: check this
         return gameService.saveGame(netGame)
-                .onErrorResume(ex -> ReactorHelper.monoError(ex, log))
                 .map(next -> DataResultable.from(next.getResult(), UUID.fromString(netGame.getUuid())))
-                .doOnNext(next -> next.ifOk(data -> gameCache.put(data, netGame)));
+                .doOnNext(next -> next.ifOk(data -> gameCache.put(data, netGame)))
+                .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
     /**
-     * Tries to retrieve all available games from backend.
+     * Tries to save given spawner to the backend and caches it.
+     *
+     * @param spawnerTypeHolder holder to save
+     * @return {@link Resultable} result of this operation.
+     */
+    public Mono<Resultable> saveSpawnerType(GameSpawnerTypeHolder spawnerTypeHolder) {
+        final var spawnerName = spawnerTypeHolder.getName();
+        return gameService.saveSpawnerType(spawnerTypeHolder)
+                .map(Resultable::convert)
+                .doOnNext(next -> {
+                    if (next.isOk()) {
+                        spawnerCache.put(spawnerName, spawnerTypeHolder);
+                        log.debug("Saved new spawner[{}] for GameType[{}].", spawnerName, gameTypeMessage.getType());
+                    }
+                })
+                .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
+    }
+
+    /**
+     * Retrieves all available games from backend.
      *
      * @return Flux of {@link NetGame}
      */
@@ -243,7 +262,7 @@ public class NetGameProvider implements Disposable {
     }
 
     /**
-     * Tries to retrieve all available configs from backend.
+     * Retrieves all available configs from backend.
      *
      * @return Flux of {@link NetGame}
      */
@@ -254,7 +273,7 @@ public class NetGameProvider implements Disposable {
     }
 
     /**
-     * Tries to retrieve all available stores from backend.
+     * Retrieves all available stores from backend.
      *
      * @return Flux of {@link NetGame}
      */
@@ -265,7 +284,7 @@ public class NetGameProvider implements Disposable {
     }
 
     /**
-     * Tries to retrieve all available spawners from backend.
+     * Retrieves all available spawners from backend.
      *
      * @return Flux of {@link NetGame}
      */

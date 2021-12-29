@@ -39,6 +39,7 @@ public class PaperCommonModule extends AbstractModule {
     @Provides
     public MinecraftHelp<CommandSenderWrapper> buildMinecraftHelp(CommandManager<CommandSenderWrapper> manager) {
         final var help = new MinecraftHelp<>("/" + commandName + " help", input -> input, manager);
+        //TODO
         //help.setMessageProvider();
         return help;
     }

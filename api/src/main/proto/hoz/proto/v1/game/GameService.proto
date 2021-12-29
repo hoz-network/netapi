@@ -18,7 +18,7 @@ message MGameType {
   hoz.proto.v1.data.GameType type = 1;
 }
 
-service GameService {
+service NetGameService {
   rpc oneByName(google.protobuf.StringValue) returns (hoz.proto.v1.data.ResultableData);
   rpc oneById(hoz.proto.v1.data.WUUID) returns (hoz.proto.v1.data.ResultableData);
 
@@ -29,6 +29,7 @@ service GameService {
   rpc allSpawnerTypes(MGameType) returns (stream hoz.proto.v1.game.GameSpawnerTypeHolder);
 
   rpc saveGame(hoz.proto.v1.game.NetGame) returns (hoz.proto.v1.data.ResultableData);
+  rpc saveSpawnerType(GameSpawnerTypeHolder) returns (resulter.proto.GrpcResultable);
 
   rpc subscribeForGameUpdates(MGameType) returns (stream hoz.proto.v1.game.NetGame);
   rpc subscribeForConfigUpdates(MGameType) returns (stream hoz.proto.v1.game.GameConfigHolder);

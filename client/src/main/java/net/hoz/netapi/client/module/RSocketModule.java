@@ -7,7 +7,7 @@ import io.rsocket.core.Resume;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.data.DataOperation;
-import net.hoz.api.service.GameServiceClient;
+import net.hoz.api.service.NetGameServiceClient;
 import net.hoz.api.service.NetLangServiceClient;
 import net.hoz.api.service.NetPlayerServiceClient;
 import net.hoz.netapi.client.config.DataConfig;
@@ -37,7 +37,7 @@ public class RSocketModule extends AbstractModule {
 
         //TODO
         if (clientConfig.origin() == DataOperation.OriginSource.GAME_SERVER) {
-            bind(GameServiceClient.class).toInstance(new GameServiceClient(rSocket));
+            bind(NetGameServiceClient.class).toInstance(new NetGameServiceClient(rSocket));
         }
     }
 

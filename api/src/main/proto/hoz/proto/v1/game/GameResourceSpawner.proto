@@ -38,7 +38,7 @@ message GameSpawnerTypeHolder {
   int32 maxSpawnAmount = 6;
   int32 spawnAmount = 7;
   int32 spawnPeriod = 8;
-  sandals.proto.v1.ProtoLocation spawnTime = 9;
+  sandals.proto.v1.ProtoTaskerTime spawnTime = 9;
 
   hoz.proto.v1.data.GameType type = 10;
 }
