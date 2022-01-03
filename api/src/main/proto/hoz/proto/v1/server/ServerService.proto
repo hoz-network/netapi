@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package hoz.proto.v1.player;
+
+option java_multiple_files = true;
+option java_package = "net.hoz.api.service";
+
+import "hoz/proto/v1/data/CommonData.proto";
+import "hoz/proto/v1/server/ServerData.proto";
+
+import "google/protobuf/empty.proto";
+import "resulter/proto/Resulter.proto";
+
+message ServerRequest {
+  hoz.proto.v1.server.ServerDetail serverDetail = 1;
+  hoz.proto.v1.data.DataOperation operation = 2;
+}
+
+service NetServerService {
+  rpc findServer(hoz.proto.v1.data.DataOperation) returns (hoz.proto.v1.data.DataOperation);
+
+  rpc registerServer(hoz.proto.v1.server.NetServer) returns(resulter.proto.GrpcResultable);
+
+  /*
+  Intended for proxies to listen to newly registered servers.
+   */
+  rpc listenToServerRegisters(hoz.proto.v1.server.ServerDetail) returns (stream hoz.proto.v1.server.NetServer);
+
+  rpc listenToServerResponses(hoz.proto.v1.server.ServerDetail) returns (stream hoz.proto.v1.data.DataOperation);
+}

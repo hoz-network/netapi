@@ -30,6 +30,19 @@ message NetGame {
   ConfigHolder customConfig = 11;
 }
 
+enum GamePhase {
+    LOADING = 0;
+    WAITING = 1;
+    STARTING = 2;
+    IN_GAME = 3;
+    DEATH_MATCH = 4;
+    ENDING = 5;
+    RESTART = 6;
+    MAINTENANCE = 7;
+    CUSTOM = 8;
+    DISABLED = 9;
+}
+
 message ConfigHolder {
   string name = 1;
   hoz.proto.v1.data.GameType type = 2;

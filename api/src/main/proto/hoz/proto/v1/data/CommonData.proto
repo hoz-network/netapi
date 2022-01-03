@@ -91,6 +91,10 @@ message DataOperation {
   Serialized LocalDateTime of creation
    */
   google.protobuf.Timestamp createdDateTime = 6;
+  /*
+  Resultable data inside this operation.
+   */
+  hoz.proto.v1.data.ResultableData data = 7;
 }
 
 /*
