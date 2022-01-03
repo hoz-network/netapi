@@ -11,7 +11,7 @@ import "sandals.proto.v1/Item.proto";
 
 message GameStoreData {
   string name = 1;
-  string holderName = 2;
+  string holderId = 2;
   string teamId = 3;
 
   sandals.proto.v1.ProtoLocation location = 4;
@@ -24,15 +24,16 @@ message GameStoreData {
 }
 
 message StoreHolder {
-  repeated StoreCategory categories = 1;
-  repeated StoreQuickBuySlot quickBuySlots = 2;
+  string uuid = 1;
 
-  string name = 3;
-  string storeNameKey = 4;
+  repeated StoreCategory categories = 2;
+  repeated StoreQuickBuySlot quickBuySlots = 3;
+
+  string name = 4;
   StoreItem decorativeItem = 5;
   int32 rows = 6;
 
-  hoz.proto.v1.data.GameType type = 8;
+  hoz.proto.v1.data.GameType gameType = 8;
 }
 
 message StoreCategory {

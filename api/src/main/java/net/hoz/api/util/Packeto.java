@@ -1,6 +1,7 @@
 package net.hoz.api.util;
 
 import com.google.protobuf.Any;
+import com.google.protobuf.GeneratedMessageV3;
 import com.google.protobuf.Message;
 import com.iamceph.resulter.core.DataResultable;
 import com.iamceph.resulter.core.Resultable;
@@ -32,10 +33,18 @@ public class Packeto {
 
         final var data = input.data();
         if (data instanceof ProtoWrapper wrapper) {
-            return ResultableData.newBuilder()
-                    .setResult(input.convertor().grpc())
-                    .setData(Any.pack(wrapper.asProto()))
-                    .build();
+            if (wrapper.asProto() instanceof Message message) {
+                return ResultableData.newBuilder()
+                        .setResult(input.convertor().grpc())
+                        .setData(Any.pack(message))
+                        .build();
+            } else {
+                return ResultableData.newBuilder()
+                        .setResult(DataResultable.fail("Cannot convert data - not proto message - " + data.getClass().getSimpleName())
+                                .convertor()
+                                .grpc())
+                        .build();
+            }
         }
 
         return ResultableData.newBuilder()

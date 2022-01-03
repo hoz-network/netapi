@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.Controlled;
 import net.hoz.api.data.ResultableData;
 import net.hoz.api.data.WUUID;
-import net.hoz.api.data.game.GameConfigHolder;
-import net.hoz.api.data.game.GameSpawnerTypeHolder;
+import net.hoz.api.data.game.ConfigHolder;
 import net.hoz.api.data.game.NetGame;
+import net.hoz.api.data.game.SpawnerTypeHolder;
 import net.hoz.api.data.game.StoreHolder;
 import net.hoz.api.service.MGameType;
 import net.hoz.api.service.NetGameServiceClient;
@@ -50,7 +50,7 @@ public class NetGameProvider implements Controlled {
      * Cached game configurations.
      */
     @Getter
-    private final Cache<String, GameConfigHolder> configCache = Caffeine.newBuilder()
+    private final Cache<String, ConfigHolder> configCache = Caffeine.newBuilder()
             .build();
     /**
      * Cached game stores.
@@ -62,7 +62,7 @@ public class NetGameProvider implements Controlled {
      * Cached game spawner types.
      */
     @Getter
-    private final Cache<String, GameSpawnerTypeHolder> spawnerCache = Caffeine.newBuilder()
+    private final Cache<String, SpawnerTypeHolder> spawnerCache = Caffeine.newBuilder()
             .build();
     /**
      * RSocket service for communicating with BAGR.
@@ -138,7 +138,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the config
      * @return {@link DataResultable} with result
      */
-    public DataResultable<GameConfigHolder> oneConfig(String name) {
+    public DataResultable<ConfigHolder> oneConfig(String name) {
         return DataResultable.failIfNull(configCache.getIfPresent(name), "Config not found.");
     }
 
@@ -147,7 +147,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Collection of configs.
      */
-    public Collection<GameConfigHolder> allConfigs() {
+    public Collection<ConfigHolder> allConfigs() {
         return configCache.asMap().values();
     }
 
@@ -176,7 +176,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the spawner
      * @return {@link DataResultable} with result
      */
-    public DataResultable<GameSpawnerTypeHolder> oneSpawner(String name) {
+    public DataResultable<SpawnerTypeHolder> oneSpawner(String name) {
         return DataResultable.failIfNull(spawnerCache.getIfPresent(name), "Spawner not found.");
     }
 
@@ -185,7 +185,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Collection of spawners.
      */
-    public Collection<GameSpawnerTypeHolder> allSpawners() {
+    public Collection<SpawnerTypeHolder> allSpawners() {
         return spawnerCache.asMap().values();
     }
 
@@ -237,7 +237,7 @@ public class NetGameProvider implements Controlled {
      * @param spawnerTypeHolder holder to save
      * @return {@link Resultable} result of this operation.
      */
-    public Mono<Resultable> saveSpawnerType(GameSpawnerTypeHolder spawnerTypeHolder) {
+    public Mono<Resultable> saveSpawnerType(SpawnerTypeHolder spawnerTypeHolder) {
         final var spawnerName = spawnerTypeHolder.getName();
         return gameService.saveSpawnerType(spawnerTypeHolder)
                 .map(Resultable::convert)
@@ -266,7 +266,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Flux of {@link NetGame}
      */
-    public Flux<GameConfigHolder> loadConfigs() {
+    public Flux<ConfigHolder> loadConfigs() {
         return gameService.allConfigs(gameTypeMessage)
                 .doOnNext(next -> log.trace("Received config[{}] for GameType[{}].", next.getName(), next.getType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
@@ -279,7 +279,7 @@ public class NetGameProvider implements Controlled {
      */
     public Flux<StoreHolder> loadStores() {
         return gameService.allStores(gameTypeMessage)
-                .doOnNext(next -> log.trace("Received store[{}] for GameType[{}].", next.getName(), next.getType()))
+                .doOnNext(next -> log.trace("Received store[{}] for GameType[{}].", next.getName(), next.getGameType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
@@ -288,7 +288,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Flux of {@link NetGame}
      */
-    public Flux<GameSpawnerTypeHolder> loadSpawners() {
+    public Flux<SpawnerTypeHolder> loadSpawners() {
         return gameService.allSpawnerTypes(gameTypeMessage)
                 .doOnNext(next -> log.trace("Received store[{}] for GameType[{}].", next.getName(), next.getType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));

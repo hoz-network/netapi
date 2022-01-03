@@ -24,15 +24,15 @@ service NetGameService {
 
   rpc all(MGameType) returns (stream hoz.proto.v1.game.NetGame);
 
-  rpc allConfigs(MGameType) returns (stream hoz.proto.v1.game.GameConfigHolder);
+  rpc allConfigs(MGameType) returns (stream hoz.proto.v1.game.ConfigHolder);
   rpc allStores(MGameType) returns (stream hoz.proto.v1.game.StoreHolder);
-  rpc allSpawnerTypes(MGameType) returns (stream hoz.proto.v1.game.GameSpawnerTypeHolder);
+  rpc allSpawnerTypes(MGameType) returns (stream hoz.proto.v1.game.SpawnerTypeHolder);
 
   rpc saveGame(hoz.proto.v1.game.NetGame) returns (hoz.proto.v1.data.ResultableData);
-  rpc saveSpawnerType(GameSpawnerTypeHolder) returns (resulter.proto.GrpcResultable);
+  rpc saveSpawnerType(SpawnerTypeHolder) returns (resulter.proto.GrpcResultable);
 
   rpc subscribeForGameUpdates(MGameType) returns (stream hoz.proto.v1.game.NetGame);
-  rpc subscribeForConfigUpdates(MGameType) returns (stream hoz.proto.v1.game.GameConfigHolder);
-  rpc subscribeForStoreUpdates(MGameType) returns (stream hoz.proto.v1.game.GameSpawnerTypeHolder);
-  rpc subscribeForSpawnerUpdates(MGameType) returns (stream hoz.proto.v1.game.StoreHolder);
+  rpc subscribeForConfigUpdates(MGameType) returns (stream hoz.proto.v1.game.ConfigHolder);
+  rpc subscribeForSpawnerUpdates(MGameType) returns (stream hoz.proto.v1.game.SpawnerTypeHolder);
+  rpc subscribeForStoreUpdates(MGameType) returns (stream hoz.proto.v1.game.StoreHolder);
 }

@@ -9,7 +9,7 @@ import "hoz/proto/v1/data/CommonData.proto";
 import "sandals.proto.v1/Location.proto";
 import "sandals.proto.v1/Tasker.proto";
 
-message ResourceSpawnerData {
+message GameSpawnerData {
   string uuid = 1;
   string spawnerTypeName = 2;
   string teamName = 3;
@@ -28,7 +28,7 @@ message ResourceSpawnerData {
   map<string, string> customData = 100;
 }
 
-message GameSpawnerTypeHolder {
+message SpawnerTypeHolder {
   string name = 1;
   string langKey = 2;
   string material = 3;

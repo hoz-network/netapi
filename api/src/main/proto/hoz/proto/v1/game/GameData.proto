@@ -22,15 +22,15 @@ message NetGame {
 
   repeated GameTeamData teams = 5;
   repeated GameStoreData stores = 6;
-  repeated ResourceSpawnerData spawners = 7;
+  repeated GameSpawnerData spawners = 7;
   repeated GameWorld world = 8;
 
   int32 minPlayers = 9;
   hoz.proto.v1.data.GameType type = 10;
-  GameConfigHolder customConfig = 11;
+  ConfigHolder customConfig = 11;
 }
 
-message GameConfigHolder {
+message ConfigHolder {
   string name = 1;
   hoz.proto.v1.data.GameType type = 2;
 
