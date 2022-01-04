@@ -1,9 +1,23 @@
 package net.hoz.api.util;
 
+import com.google.protobuf.Message;
 import lombok.experimental.UtilityClass;
+
+import java.util.function.Function;
 
 @UtilityClass
 public final class ProtoUtils {
+
+    public <T extends Message> T getOrNull(T input) {
+       return getOrNull(input, data -> data);
+    }
+
+    public <T extends Message, K> K getOrNull(T input, Function<T, K> mapping) {
+        if (input.equals(input.getDefaultInstanceForType())) {
+            return null;
+        }
+        return mapping.apply(input);
+    }
 
     public String getOrEmpty(String input) {
         if (input == null) {
