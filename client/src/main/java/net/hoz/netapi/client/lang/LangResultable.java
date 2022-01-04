@@ -7,6 +7,9 @@ import org.screamingsandals.lib.lang.Translation;
 
 import java.util.List;
 
+/**
+ * A Resultable extension that provides {@link Translation} with the result.
+ */
 public interface LangResultable extends Resultable {
 
     List<Translation> translations();

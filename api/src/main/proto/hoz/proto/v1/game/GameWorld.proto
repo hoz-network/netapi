@@ -10,7 +10,7 @@ import "sandals.proto.v1/Location.proto";
 message GameWorld {
   string gameId = 1;
   map<string, WorldData> customWorlds = 2;
-  WorldData gameWorld = 3;
+  WorldData arenaWorld = 3;
   WorldData lobbyWorld = 4;
 }
 
@@ -22,6 +22,8 @@ message WorldData {
   sandals.proto.v1.ProtoLocation border2 = 4;
   sandals.proto.v1.ProtoLocation spawn = 5;
   sandals.proto.v1.ProtoLocation spectator = 6;
+
+  bool destroyable = 7;
 
   map<string, sandals.proto.v1.ProtoLocation> customLocations = 100;
   map<string, string> customData = 101;

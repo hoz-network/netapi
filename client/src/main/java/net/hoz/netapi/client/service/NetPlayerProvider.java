@@ -13,6 +13,7 @@ import net.hoz.api.data.NetPlayer;
 import net.hoz.api.data.NetPlayerHistory;
 import net.hoz.api.data.PlayerSettings;
 import net.hoz.api.data.WUUID;
+import net.hoz.api.service.NetPlayerRequest;
 import net.hoz.api.service.NetPlayerServiceClient;
 import net.hoz.api.util.Packeto;
 import net.hoz.api.util.ReactorHelper;
@@ -98,11 +99,13 @@ public class NetPlayerProvider implements Disposable {
      * Tries to get the {@link NetPlayer} data container from the BAGR instance.
      *
      * @param uuid
+     * @param address
      * @return
      */
-    public Mono<DataResultable<NetPlayer>> loadPlayer(UUID uuid) {
-        return netPlayerService.dataFor(WUUID.newBuilder()
-                        .setValue(uuid.toString())
+    public Mono<DataResultable<NetPlayer>> loadPlayer(UUID uuid, String address) {
+        return netPlayerService.dataFor(NetPlayerRequest.newBuilder()
+                        .setUUID(uuid.toString())
+                        .setAddress(address)
                         .build())
                 .filter(ReactorHelper.filterResult(log))
                 .map(data -> Packeto.unpack(data, NetPlayer.class))
@@ -178,18 +181,7 @@ public class NetPlayerProvider implements Disposable {
                     .map(next -> next.getSettings()
                             .getSettingsMap()
                             .get(key.getNumber()))
-                    .switchIfEmpty(forKeyUncached(uuid, key));
-        }
-
-        private Mono<Boolean> forKeyUncached(UUID uuid, PlayerSettings.Key key) {
-            return client.loadPlayer(uuid)
-                    .filter(DataResultable::isOk)
-                    .map(netPlayer -> netPlayer
-                            .data()
-                            .getSettings()
-                            .getSettingsMap()
-                            .get(key.getNumber()))
-                    .defaultIfEmpty(false);
+                    .switchIfEmpty(Mono.just(false));
         }
     }
 }

@@ -18,7 +18,7 @@ message NetPlayerRequest {
 
 service NetPlayerService {
   rpc dataFor(NetPlayerRequest) returns (hoz.proto.v1.data.ResultableData);
-  rpc historyFor(NetPlayerRequest) returns (hoz.proto.v1.data.ResultableData);
+  rpc historyFor(hoz.proto.v1.data.WUUID) returns (hoz.proto.v1.data.ResultableData);
 
   rpc playerOnline(hoz.proto.v1.data.WUUID) returns (resulter.proto.GrpcResultable);
   rpc playerOffline(hoz.proto.v1.data.WUUID) returns (resulter.proto.GrpcResultable);
