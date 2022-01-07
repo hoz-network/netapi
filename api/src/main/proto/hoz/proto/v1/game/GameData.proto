@@ -23,7 +23,7 @@ message NetGame {
   repeated GameTeamData teams = 5;
   repeated GameStoreData stores = 6;
   repeated GameSpawnerData spawners = 7;
-  repeated GameWorld world = 8;
+  GameWorld world = 8;
 
   int32 minPlayers = 9;
   hoz.proto.v1.data.GameType type = 10;
@@ -51,6 +51,9 @@ message ConfigHolder {
   Times times = 4;
   Enabled enabled = 5;
   Spawners spawners = 6;
+  Destroyable destroyable = 7;
+
+  bool customized = 8;
 
   message Tick {
     sandals.proto.v1.ProtoTaskerTime unit = 1;
@@ -76,5 +79,9 @@ message ConfigHolder {
   message Spawners {
     bool stopIfTeamIsDead = 1;
     bool addItemsToInventory = 2;
+  }
+
+  message Destroyable {
+    repeated string blocks = 1;
   }
 }

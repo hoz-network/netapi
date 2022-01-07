@@ -9,6 +9,7 @@ import com.iamceph.resulter.core.Resultable;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import net.hoz.api.Controlled;
 import net.hoz.api.data.NetPlayer;
 import net.hoz.api.data.NetPlayerHistory;
 import net.hoz.api.data.PlayerSettings;
@@ -20,7 +21,9 @@ import net.hoz.api.util.ReactorHelper;
 import net.hoz.netapi.client.util.NetUtils;
 import org.screamingsandals.lib.utils.Controllable;
 import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 import java.time.Duration;
 import java.util.Locale;
@@ -29,8 +32,9 @@ import java.util.UUID;
 /**
  * Service for managing generally players.
  */
+@Accessors(fluent = true)
 @Slf4j
-public class NetPlayerProvider implements Disposable {
+public class NetPlayerProvider implements Controlled {
     /**
      * Cache of the player data.
      */
@@ -44,25 +48,28 @@ public class NetPlayerProvider implements Disposable {
             .expireAfterAccess(Duration.ofMinutes(30))
             .build();
 
+    private final Sinks.Many<NetPlayer> playerUpdater;
+
     /**
      * RSocket service.
      */
     private final NetPlayerServiceClient netPlayerService;
 
-    @Accessors(fluent = true)
     @Getter
     private final Settings settings;
 
     private Disposable updateListener;
 
     @Inject
-    public NetPlayerProvider(NetPlayerServiceClient netPlayerService,
-                             Controllable controllable) {
+    public NetPlayerProvider(NetPlayerServiceClient netPlayerService) {
         this.netPlayerService = netPlayerService;
         this.settings = new Settings(this);
+        this.playerUpdater = Sinks.many().multicast().directBestEffort();
+    }
 
-        controllable.enable(this::subscribeToUpdates);
-        controllable.preDisable(this::dispose);
+    @Override
+    public void initialize() {
+        subscribeToUpdates();
     }
 
     @Override
@@ -161,18 +168,23 @@ public class NetPlayerProvider implements Disposable {
         return NetUtils.resolveLocale(data.data().getSettings().getLocale());
     }
 
+    public Flux<NetPlayer> playerUpdater() {
+        return playerUpdater.asFlux();
+    }
+
     private void subscribeToUpdates() {
         if (updateListener != null) {
             updateListener.dispose();
         }
 
         updateListener = netPlayerService.subscribeToUpdates(Empty.getDefaultInstance())
-                .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
-                .subscribe(data -> {
+                .doOnNext(data -> {
                     final var uuid = UUID.fromString(data.getOwner().getUuid());
-                    playerCache.invalidate(uuid);
                     playerCache.put(uuid, data);
-                });
+                    playerUpdater.tryEmitNext(data);
+                })
+                .onErrorResume(ex -> ReactorHelper.fluxError(ex, log))
+                .subscribe();
     }
 
     public record Settings(NetPlayerProvider client) {
