@@ -16,14 +16,10 @@ message GameSpawnerData {
 
   sandals.proto.v1.ProtoLocation location = 4;
 
-  double spread = 5;
-  int32 maxSpawnAmount = 6;
-  int32 spawnAmount = 7;
-  int32 spawnPeriod = 8;
-  sandals.proto.v1.ProtoLocation spawnTime = 9;
+  SpawnerSettings customSettings = 5;
 
-  bool withHologram = 10;
-  bool useGlobalValues = 11;
+  bool withHologram = 6;
+  bool useGlobalValues = 7;
 
   map<string, string> customData = 100;
 }
@@ -34,11 +30,15 @@ message SpawnerTypeHolder {
   string material = 3;
   hoz.proto.v1.data.MinecraftColor color = 4;
 
-  double spread = 5;
-  int32 maxSpawnAmount = 6;
-  int32 spawnAmount = 7;
-  int32 spawnPeriod = 8;
-  sandals.proto.v1.ProtoTaskerTime spawnTime = 9;
+  SpawnerSettings settings = 5;
 
-  hoz.proto.v1.data.GameType type = 10;
+  hoz.proto.v1.data.GameType type = 6;
+}
+
+message SpawnerSettings {
+  double spread = 1;
+  int32 maxSpawnAmount = 2;
+  int32 spawnAmount = 3;
+  int32 spawnPeriod = 4;
+  sandals.proto.v1.ProtoTaskerTime spawnTime = 5;
 }
