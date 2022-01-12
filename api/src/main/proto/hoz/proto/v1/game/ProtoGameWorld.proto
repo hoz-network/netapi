@@ -7,14 +7,14 @@ option java_package = "net.hoz.api.data.game";
 
 import "sandals.proto.v1/Location.proto";
 
-message GameWorld {
+message ProtoGameWorld {
   string gameId = 1;
-  map<string, WorldData> customWorlds = 2;
-  WorldData arenaWorld = 3;
-  WorldData lobbyWorld = 4;
+  map<string, ProtoWorldData> customWorlds = 2;
+  ProtoWorldData arenaWorld = 3;
+  ProtoWorldData lobbyWorld = 4;
 }
 
-message WorldData {
+message ProtoWorldData {
   string name = 1;
   WorldType type = 2;
 

@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.hoz.api.Controlled;
 import net.hoz.api.data.ResultableData;
 import net.hoz.api.data.WUUID;
-import net.hoz.api.data.game.ConfigHolder;
-import net.hoz.api.data.game.NetGame;
-import net.hoz.api.data.game.SpawnerTypeHolder;
+import net.hoz.api.data.game.GameConfig;
+import net.hoz.api.data.game.ProtoGameFrame;
+import net.hoz.api.data.game.ProtoSpawnerType;
 import net.hoz.api.data.game.StoreHolder;
 import net.hoz.api.service.MGameType;
 import net.hoz.api.service.NetGameServiceClient;
@@ -29,7 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Provider for {@link NetGame} and other game-related data.
+ * Provider for {@link ProtoGameFrame} and other game-related data.
  * <p>
  * This provider communicates with our BAGR backend heavily and when the provider is initialized,
  * it asks BAGR about all data related to given {@link net.hoz.api.data.GameType}.
@@ -44,13 +44,13 @@ public class NetGameProvider implements Controlled {
      * Cached games.
      */
     @Getter
-    private final Cache<UUID, NetGame> gameCache = Caffeine.newBuilder()
+    private final Cache<UUID, ProtoGameFrame> gameCache = Caffeine.newBuilder()
             .build();
     /**
      * Cached game configurations.
      */
     @Getter
-    private final Cache<String, ConfigHolder> configCache = Caffeine.newBuilder()
+    private final Cache<String, GameConfig> configCache = Caffeine.newBuilder()
             .build();
     /**
      * Cached game stores.
@@ -62,7 +62,7 @@ public class NetGameProvider implements Controlled {
      * Cached game spawner types.
      */
     @Getter
-    private final Cache<String, SpawnerTypeHolder> spawnerCache = Caffeine.newBuilder()
+    private final Cache<String, ProtoSpawnerType> spawnerCache = Caffeine.newBuilder()
             .build();
     /**
      * RSocket service for communicating with BAGR.
@@ -105,7 +105,7 @@ public class NetGameProvider implements Controlled {
      * @param gameId id of the game
      * @return {@link DataResultable} with result
      */
-    public DataResultable<NetGame> oneGame(UUID gameId) {
+    public DataResultable<ProtoGameFrame> oneGame(UUID gameId) {
         return DataResultable.failIfNull(gameCache.getIfPresent(gameId), "Game not found.");
     }
 
@@ -115,7 +115,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the game
      * @return {@link DataResultable} with result
      */
-    public DataResultable<NetGame> oneGame(String name) {
+    public DataResultable<ProtoGameFrame> oneGame(String name) {
         final var uuid = gameNameToUUID.get(name);
         if (uuid == null) {
             return DataResultable.fail("Game not found.");
@@ -128,7 +128,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Collection of games.
      */
-    public Collection<NetGame> allGames() {
+    public Collection<ProtoGameFrame> allGames() {
         return gameCache.asMap().values();
     }
 
@@ -138,7 +138,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the config
      * @return {@link DataResultable} with result
      */
-    public DataResultable<ConfigHolder> oneConfig(String name) {
+    public DataResultable<GameConfig> oneConfig(String name) {
         return DataResultable.failIfNull(configCache.getIfPresent(name), "Config not found.");
     }
 
@@ -147,7 +147,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Collection of configs.
      */
-    public Collection<ConfigHolder> allConfigs() {
+    public Collection<GameConfig> allConfigs() {
         return configCache.asMap().values();
     }
 
@@ -176,7 +176,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the spawner
      * @return {@link DataResultable} with result
      */
-    public DataResultable<SpawnerTypeHolder> oneSpawner(String name) {
+    public DataResultable<ProtoSpawnerType> oneSpawner(String name) {
         return DataResultable.failIfNull(spawnerCache.getIfPresent(name), "Spawner not found.");
     }
 
@@ -185,7 +185,7 @@ public class NetGameProvider implements Controlled {
      *
      * @return Collection of spawners.
      */
-    public Collection<SpawnerTypeHolder> allSpawners() {
+    public Collection<ProtoSpawnerType> allSpawners() {
         return spawnerCache.asMap().values();
     }
 
@@ -195,7 +195,7 @@ public class NetGameProvider implements Controlled {
      * @param gameId game id
      * @return {@link DataResultable} of the operation.
      */
-    public Mono<DataResultable<NetGame>> loadGame(UUID gameId) {
+    public Mono<DataResultable<ProtoGameFrame>> loadGame(UUID gameId) {
         return doGameLoading(gameService.oneById(
                 WUUID.newBuilder()
                         .setValue(gameId.toString())
@@ -209,7 +209,7 @@ public class NetGameProvider implements Controlled {
      * @param name name of the game
      * @return {@link DataResultable} of the operation.
      */
-    public Mono<DataResultable<NetGame>> loadGame(String name) {
+    public Mono<DataResultable<ProtoGameFrame>> loadGame(String name) {
         return doGameLoading(gameService.oneByName(
                 StringValue.newBuilder()
                         .setValue(name)
@@ -220,14 +220,14 @@ public class NetGameProvider implements Controlled {
     /**
      * Tries to save given game to the backend and replaces it in the cache.
      *
-     * @param netGame game to save.
+     * @param frame game to save.
      * @return {@link DataResultable} result of this operation.
      */
-    public Mono<DataResultable<UUID>> saveGame(NetGame netGame) {
+    public Mono<DataResultable<UUID>> saveGame(ProtoGameFrame frame) {
         //TODO: check this
-        return gameService.saveGame(netGame)
-                .map(next -> DataResultable.from(next.getResult(), UUID.fromString(netGame.getUuid())))
-                .doOnNext(next -> next.ifOk(data -> gameCache.put(data, netGame)))
+        return gameService.saveGame(frame)
+                .map(next -> DataResultable.from(next.getResult(), UUID.fromString(frame.getUuid())))
+                .doOnNext(next -> next.ifOk(data -> gameCache.put(data, frame)))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
@@ -237,7 +237,7 @@ public class NetGameProvider implements Controlled {
      * @param spawnerTypeHolder holder to save
      * @return {@link Resultable} result of this operation.
      */
-    public Mono<Resultable> saveSpawnerType(SpawnerTypeHolder spawnerTypeHolder) {
+    public Mono<Resultable> saveSpawnerType(ProtoSpawnerType spawnerTypeHolder) {
         final var spawnerName = spawnerTypeHolder.getName();
         return gameService.saveSpawnerType(spawnerTypeHolder)
                 .map(Resultable::convert)
@@ -253,9 +253,9 @@ public class NetGameProvider implements Controlled {
     /**
      * Retrieves all available games from backend.
      *
-     * @return Flux of {@link NetGame}
+     * @return Flux of {@link ProtoGameFrame}
      */
-    public Flux<NetGame> loadGames() {
+    public Flux<ProtoGameFrame> loadGames() {
         return gameService.all(gameTypeMessage)
                 .doOnNext(next -> log.trace("Received game [{}] - [{}] for GameType[{}].", next.getName(), next.getUuid(), next.getType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
@@ -264,9 +264,9 @@ public class NetGameProvider implements Controlled {
     /**
      * Retrieves all available configs from backend.
      *
-     * @return Flux of {@link NetGame}
+     * @return Flux of {@link GameConfig}
      */
-    public Flux<ConfigHolder> loadConfigs() {
+    public Flux<GameConfig> loadConfigs() {
         return gameService.allConfigs(gameTypeMessage)
                 .doOnNext(next -> log.trace("Received config[{}] for GameType[{}].", next.getName(), next.getType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
@@ -275,7 +275,7 @@ public class NetGameProvider implements Controlled {
     /**
      * Retrieves all available stores from backend.
      *
-     * @return Flux of {@link NetGame}
+     * @return Flux of {@link StoreHolder}
      */
     public Flux<StoreHolder> loadStores() {
         return gameService.allStores(gameTypeMessage)
@@ -286,24 +286,24 @@ public class NetGameProvider implements Controlled {
     /**
      * Retrieves all available spawners from backend.
      *
-     * @return Flux of {@link NetGame}
+     * @return Flux of {@link ProtoSpawnerType}
      */
-    public Flux<SpawnerTypeHolder> loadSpawners() {
+    public Flux<ProtoSpawnerType> loadSpawners() {
         return gameService.allSpawnerTypes(gameTypeMessage)
                 .doOnNext(next -> log.trace("Received store[{}] for GameType[{}].", next.getName(), next.getType()))
                 .onErrorResume(ex -> ReactorHelper.monoError(ex, log));
     }
 
     /**
-     * Processes the given {@link ResultableData} into a {@link NetGame}.
+     * Processes the given {@link ResultableData} into a {@link ProtoGameFrame}.
      *
      * @param loadingMono mono from the backend
      * @return mono with {@link DataResultable} result of the operation.
      */
-    protected Mono<DataResultable<NetGame>> doGameLoading(Mono<ResultableData> loadingMono) {
+    protected Mono<DataResultable<ProtoGameFrame>> doGameLoading(Mono<ResultableData> loadingMono) {
         return loadingMono
                 .filter(ReactorHelper.filterResult(log))
-                .map(result -> Packeto.unpack(result.getData(), NetGame.class))
+                .map(result -> Packeto.unpack(result.getData(), ProtoGameFrame.class))
                 .doOnNext(next -> next.ifOk(game -> {
                     final var uuid = UUID.fromString(game.getUuid());
                     log.debug("Received game [{}] - [{}] for GameType[{}]", game.getName(), uuid, game.getType());

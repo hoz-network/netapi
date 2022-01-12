@@ -9,7 +9,7 @@ import "hoz/proto/v1/data/CommonData.proto";
 import "sandals.proto.v1/Location.proto";
 import "sandals.proto.v1/Item.proto";
 
-message GameStoreData {
+message ProtoGameStore {
   string name = 1;
   string holderId = 2;
   string teamId = 3;

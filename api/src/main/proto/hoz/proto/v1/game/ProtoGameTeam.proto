@@ -8,7 +8,7 @@ option java_package = "net.hoz.api.data.game";
 import "sandals.proto.v1/Location.proto";
 import "hoz/proto/v1/data/CommonData.proto";
 
-message GameTeamData {
+message ProtoGameTeam {
   string name = 1;
   hoz.proto.v1.data.MinecraftColor color = 2;
   sandals.proto.v1.ProtoLocation spawn = 3;

@@ -6,7 +6,7 @@ option java_multiple_files = true;
 option java_package = "net.hoz.api.data";
 
 import "hoz/proto/v1/data/CommonData.proto";
-import "hoz/proto/v1/game/GameData.proto";
+import "hoz/proto/v1/game/ProtoGameData.proto";
 import "google/protobuf/timestamp.proto";
 
 message NetServer {

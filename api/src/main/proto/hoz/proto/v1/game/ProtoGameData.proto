@@ -8,26 +8,26 @@ option java_package = "net.hoz.api.data.game";
 import "sandals.proto.v1/Tasker.proto";
 
 import "hoz/proto/v1/data/CommonData.proto";
-import "hoz/proto/v1/game/GameTeam.proto";
-import "hoz/proto/v1/game/GameStore.proto";
-import "hoz/proto/v1/game/GameWorld.proto";
-import "hoz/proto/v1/game/GameResourceSpawner.proto";
+import "hoz/proto/v1/game/ProtoGameTeam.proto";
+import "hoz/proto/v1/game/ProtoGameStore.proto";
+import "hoz/proto/v1/game/ProtoGameWorld.proto";
+import "hoz/proto/v1/game/ProtoGameSpawner.proto";
 
-message NetGame {
+message ProtoGameFrame {
   string uuid = 1;
   string name = 2;
   string displayName = 3;
 
   string configName = 4;
 
-  repeated GameTeamData teams = 5;
-  repeated GameStoreData stores = 6;
-  repeated GameSpawnerData spawners = 7;
-  GameWorld world = 8;
+  repeated ProtoGameTeam teams = 5;
+  repeated ProtoGameStore stores = 6;
+  repeated ProtoGameSpawner spawners = 7;
+  ProtoGameWorld world = 8;
 
   int32 minPlayers = 9;
   hoz.proto.v1.data.GameType type = 10;
-  ConfigHolder customConfig = 11;
+  GameConfig customConfig = 11;
 }
 
 enum GamePhase {
@@ -43,7 +43,7 @@ enum GamePhase {
     DISABLED = 9;
 }
 
-message ConfigHolder {
+message GameConfig {
   string name = 1;
   hoz.proto.v1.data.GameType type = 2;
 

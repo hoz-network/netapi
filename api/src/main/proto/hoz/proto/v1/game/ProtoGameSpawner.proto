@@ -9,14 +9,12 @@ import "hoz/proto/v1/data/CommonData.proto";
 import "sandals.proto.v1/Location.proto";
 import "sandals.proto.v1/Tasker.proto";
 
-message GameSpawnerData {
+message ProtoGameSpawner {
   string uuid = 1;
   string spawnerTypeName = 2;
   string teamName = 3;
 
   sandals.proto.v1.ProtoLocation location = 4;
-
-  SpawnerSettings customSettings = 5;
 
   bool withHologram = 6;
   bool useGlobalValues = 7;
@@ -24,18 +22,19 @@ message GameSpawnerData {
   map<string, string> customData = 100;
 }
 
-message SpawnerTypeHolder {
+message ProtoSpawnerType {
   string name = 1;
-  string langKey = 2;
+  string nameTranslation = 2;
   string material = 3;
   hoz.proto.v1.data.MinecraftColor color = 4;
 
-  SpawnerSettings settings = 5;
+  ProtoSpawnerSettings settings = 5;
 
   hoz.proto.v1.data.GameType type = 6;
+  bool global = 7;
 }
 
-message SpawnerSettings {
+message ProtoSpawnerSettings {
   double spread = 1;
   int32 maxSpawnAmount = 2;
   int32 spawnAmount = 3;
