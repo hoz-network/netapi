@@ -4,10 +4,11 @@ plugins {
 
 dependencies {
     compileOnly("commons-lang", "commons-lang", "2.6")
+    api("com.google.guava", "guava", "30.1-jre")
 
     api(project(":api"))
     api("net.hoz", "netproto", "1.0.0-SNAPSHOT")
-    api("com.iamceph.resulter", "kotlin-extensions", "1.1.4-SNAPSHOT")
+    api("com.iamceph.resulter", "kotlin-extensions", "1.1.4")
 
     //rsocket
     api("io.rsocket", "rsocket-core", "1.1.1")
@@ -17,6 +18,7 @@ dependencies {
     api("org.screamingsandals.lib", "utils-common", "2.0.1-SNAPSHOT")
     api("org.screamingsandals.lib", "command-common", "2.0.1-SNAPSHOT")
     api("org.screamingsandals.lib", "lang", "2.0.1-SNAPSHOT")
+    api("org.screamingsandals.lib", "kotlin-extra", "2.0.1-SNAPSHOT")
 
     api("com.google.inject", "guice", "5.0.1")
     api("com.github.ben-manes.caffeine", "caffeine", "3.0.3")

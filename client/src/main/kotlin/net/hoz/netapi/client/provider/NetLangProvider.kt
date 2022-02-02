@@ -3,17 +3,18 @@ package net.hoz.netapi.client.provider
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
-import net.hoz.api.Controlled
 import net.hoz.api.data.DataOperation
 import net.hoz.api.service.LangData
 import net.hoz.api.service.NetLangServiceClient
-import net.hoz.api.util.ReactorHelper
+import net.hoz.netapi.api.Controlled
+import net.hoz.netapi.api.ReactorHelper
 import net.hoz.netapi.client.config.DataConfig
 import net.hoz.netapi.client.data.DataHolder
 import net.hoz.netapi.client.lang.NLang
 import net.hoz.netapi.client.lang.NetTranslationContainer
 import net.hoz.netapi.client.util.NetUtils
 import net.kyori.adventure.text.Component
+import org.screamingsandals.lib.kotlin.unwrap
 import org.screamingsandals.lib.lang.Lang
 import org.screamingsandals.lib.lang.LangService
 import org.screamingsandals.lib.lang.Message
@@ -110,7 +111,7 @@ constructor(
             return FALLBACK_LOCALE
         }
 
-        val playerId = sender.`as`(PlayerWrapper::class.java).uuid
+        val playerId = sender.unwrap(PlayerWrapper::class).uuid
         val maybeLocale = playerManager.resolveLocale(playerId)
 
         return if (maybeLocale.isFail) {

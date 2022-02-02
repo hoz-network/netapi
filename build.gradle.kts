@@ -21,9 +21,4 @@ subprojects {
         mavenLocal()
         maven(url = "https://repo.screamingsandals.org/public")
     }
-
-    dependencies {
-        api("com.google.guava", "guava", "30.1-jre")
-        api("org.slf4j","slf4j-api", "1.7.32")
-    }
 }

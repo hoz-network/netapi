@@ -5,6 +5,7 @@ import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
 import com.iamceph.resulter.kotlin.ifOk
+import com.iamceph.resulter.kotlin.resultable
 import com.iamceph.resulter.kotlin.unpack
 import net.hoz.api.data.NetPlayer
 import net.hoz.api.data.NetPlayerHistory
@@ -14,7 +15,6 @@ import net.hoz.api.service.NetPlayerServiceClient
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.ReactorHelper
 import net.hoz.netapi.api.onErrorHandle
-import net.hoz.netapi.client.resultable
 import net.hoz.netapi.client.util.NetUtils
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
