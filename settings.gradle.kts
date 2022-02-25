@@ -6,7 +6,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "kneatpi"
+rootProject.name = "netapi"
 
 include("client")
 include("api")
