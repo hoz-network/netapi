@@ -7,7 +7,7 @@ import net.hoz.api.data.DataOperation
 import net.hoz.api.service.LangData
 import net.hoz.api.service.NetLangServiceClient
 import net.hoz.netapi.api.Controlled
-import net.hoz.netapi.api.ReactorHelper
+import net.hoz.netapi.api.onErrorHandle
 import net.hoz.netapi.client.config.DataConfig
 import net.hoz.netapi.client.data.DataHolder
 import net.hoz.netapi.client.lang.NLang
@@ -62,7 +62,7 @@ constructor(
 
         updateListener = langService.subscribe(Empty.getDefaultInstance())
             .doOnNext { updateData(it) }
-            .onErrorResume { ReactorHelper.fluxError(it, log) }
+            .onErrorHandle(log)
             .subscribe()
     }
 
@@ -200,7 +200,7 @@ constructor(
         langService.all(Empty.getDefaultInstance())
             .doOnNext { registerData(it) }
             .doOnComplete { onLoadingComplete() }
-            .onErrorResume { ReactorHelper.fluxError(it, log) }
+            .onErrorHandle(log)
             .subscribe()
     }
 

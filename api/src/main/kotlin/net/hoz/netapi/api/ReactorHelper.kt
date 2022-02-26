@@ -4,17 +4,10 @@ import org.slf4j.Logger
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
-class ReactorHelper {
+fun <T> fluxError(ex: Throwable, log: Logger): Flux<T> = Flux.empty<T>().also { log.warn("Exception: ${ex.message}", ex) }
 
-    companion object {
-        fun <T> fluxError(ex: Throwable, log: Logger): Flux<T> {
-            log.warn("Exception: ${ex.message}", ex)
-            return Flux.empty()
-        }
+fun <T> monoError(ex: Throwable, log: Logger): Mono<T> = Mono.empty<T>().also { log.warn("Exception: ${ex.message}", ex) }
 
-        fun <T> monoError(ex: Throwable, log: Logger): Mono<T> {
-            log.warn("Exception: ${ex.message}", ex)
-            return Mono.empty()
-        }
-    }
-}
+fun <T> Flux<T>.onErrorHandle(log: Logger): Flux<T> = onErrorResume { fluxError(it, log) }
+
+fun <T> Mono<T>.onErrorHandle(log: Logger): Mono<T> = onErrorResume { monoError(it, log) }

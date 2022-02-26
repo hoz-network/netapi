@@ -15,7 +15,6 @@ dependencies {
     api("io.rsocket", "rsocket-transport-netty", "1.1.1")
 
     api("org.screamingsandals.lib", "core-common", "2.0.1-SNAPSHOT")
-    api("org.screamingsandals.lib", "utils-common", "2.0.1-SNAPSHOT")
     api("org.screamingsandals.lib", "command-common", "2.0.1-SNAPSHOT")
     api("org.screamingsandals.lib", "lang", "2.0.1-SNAPSHOT")
     api("org.screamingsandals.lib", "kotlin-extra", "2.0.1-SNAPSHOT")

@@ -18,7 +18,7 @@ subprojects {
 
     repositories {
         mavenCentral()
-        maven(url = "https://repo.hoznet.dev/snapshots")
-        maven(url = "https://repo.screamingsandals.org/public")
+        maven("https://repo.hoznet.dev/snapshots")
+        maven("https://repo.screamingsandals.org/public")
     }
 }

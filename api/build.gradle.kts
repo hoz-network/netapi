@@ -5,5 +5,5 @@ plugins {
 dependencies {
     compileOnly("io.projectreactor", "reactor-core", "3.4.12")
 
-    api("org.slf4j","slf4j-api", "1.7.32")
+    api("io.github.microutils", "kotlin-logging-jvm", "2.1.20")
 }
