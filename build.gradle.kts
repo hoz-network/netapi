@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "1.6.10" apply false
+    kotlin("jvm") version "1.6.20-M1" apply false
 
-    id("org.screamingsandals.plugin-builder") version "1.0.67"
+    id("org.screamingsandals.plugin-builder") version "1.0.76"
 }
 
 allprojects {
@@ -18,7 +18,7 @@ subprojects {
 
     repositories {
         mavenCentral()
-        mavenLocal()
+        maven(url = "https://repo.hoznet.dev/snapshots")
         maven(url = "https://repo.screamingsandals.org/public")
     }
 }
