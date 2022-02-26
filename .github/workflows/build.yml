@@ -1,0 +1,28 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 17
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'gradle'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Build and publish with Gradle
+        run: ./gradlew screamCompile
+        env:
+          OPTIMIZE_FOR_CI_CD: 1
+          NEXUS_URL_RELEASE: https://repo.hoznet.dev/releases
+          NEXUS_URL_SNAPSHOT: https://repo.hoznet.dev/snapshots
+          NEXUS_USERNAME: github
+          NEXUS_PASSWORD: ${{ secrets.REPOSILITE_CI_TOKEN }}
