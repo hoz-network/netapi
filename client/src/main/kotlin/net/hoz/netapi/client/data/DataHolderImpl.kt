@@ -2,45 +2,19 @@ package net.hoz.netapi.client.data
 
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
-import org.spongepowered.configurate.ConfigurateException
+import com.iamceph.resulter.kotlin.dataResultable
+import com.iamceph.resulter.kotlin.resultable
 import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.gson.GsonConfigurationLoader
 
 class DataHolderImpl(json: String) : DataHolder {
-    private var root: ConfigurationNode
+    override var root: ConfigurationNode = build(json)
 
-    init {
-        this.root = build(json)
-    }
+    override fun node(key: String): ConfigurationNode = root.node(key.split("\\."))
 
-    override fun root(): ConfigurationNode {
-        return root
-    }
+    override fun update(input: String): Resultable = resultable { root = build(input) }
 
-    override fun node(key: String): ConfigurationNode {
-        return root.node(key.split("\\."))
-    }
+    override fun json(): DataResultable<String> = dataResultable { GsonConfigurationLoader.builder().buildAndSaveString(root) }
 
-    override fun update(input: String): Resultable {
-        return try {
-            this.root = build(input)
-            Resultable.ok()
-        } catch (e: ConfigurateException) {
-            Resultable.fail(e)
-        }
-    }
-
-    override fun json(): DataResultable<String> {
-        return try {
-            DataResultable.failIfNull(GsonConfigurationLoader.builder().buildAndSaveString(root))
-        } catch (e: Exception) {
-            DataResultable.fail(e)
-        }
-    }
-
-    private fun build(input: String): ConfigurationNode {
-        return GsonConfigurationLoader
-            .builder()
-            .buildAndLoadString(input)
-    }
+    private fun build(input: String): ConfigurationNode = GsonConfigurationLoader.builder().buildAndLoadString(input)
 }

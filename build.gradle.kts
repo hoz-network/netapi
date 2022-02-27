@@ -13,6 +13,7 @@ subprojects {
     apply {
         plugin("java-library")
         plugin("idea")
+        plugin("org.jetbrains.kotlin.jvm")
         plugin("org.screamingsandals.plugin-builder")
     }
 

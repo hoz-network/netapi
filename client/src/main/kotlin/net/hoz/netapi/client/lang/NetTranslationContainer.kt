@@ -12,7 +12,7 @@ class NetTranslationContainer(
     private var fallbackContainer: TranslationContainer? = null
 
     override fun getNode(): ConfigurationNode {
-        return dataHolder.root()
+        return dataHolder.root
     }
 
     override fun setNode(configurationNode: ConfigurationNode) {
@@ -48,7 +48,7 @@ class NetTranslationContainer(
     }
 
     override fun isEmpty(): Boolean {
-        return dataHolder.root().empty()
+        return dataHolder.root.empty()
                 || fallbackContainer != null
                 && fallbackContainer!!.isEmpty
     }

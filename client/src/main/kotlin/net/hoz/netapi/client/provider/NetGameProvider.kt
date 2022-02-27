@@ -1,5 +1,6 @@
 package net.hoz.netapi.client.provider
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.StringValue
 import com.iamceph.resulter.core.DataResultable
@@ -19,6 +20,8 @@ import net.hoz.api.service.NetGameServiceClient
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.onErrorHandle
 import net.hoz.netapi.client.config.DataConfig
+import network.hoz.kaffeine.get
+import network.hoz.kaffeine.set
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
@@ -36,19 +39,16 @@ class NetGameProvider(
      */
     private val gameNameToUUID: MutableMap<String, UUID> = mutableMapOf()
 
-    private val gameCache = Caffeine.newBuilder()
-        .build<UUID, ProtoGameFrame>()
+    private val gameCache: Cache<UUID, ProtoGameFrame> = Caffeine.newBuilder().build()
 
-    private val configCache = Caffeine.newBuilder()
-        .build<String, GameConfig>()
+    private val configCache: Cache<String, GameConfig> = Caffeine.newBuilder().build()
 
-    private val storeCache = Caffeine.newBuilder()
-        .build<String, StoreHolder>()
+    private val storeCache: Cache<String, StoreHolder> = Caffeine.newBuilder().build()
 
-    private val spawnerCache = Caffeine.newBuilder()
-        .build<String, ProtoSpawnerType>()
+    private val spawnerCache: Cache<String, ProtoSpawnerType> = Caffeine.newBuilder().build()
 
     @Inject
+    @Suppress("unused") // constructor needed for guice, don't remove
     constructor(gameService: NetGameServiceClient, clientConfig: DataConfig) : this(
         gameService,
         clientConfig,
@@ -72,7 +72,7 @@ class NetGameProvider(
      * @param gameId id of the game
      * @return [DataResultable] with result
      */
-    fun oneGame(gameId: UUID): DataResultable<ProtoGameFrame> = DataResultable.failIfNull(gameCache.getIfPresent(gameId), "Game not found.")
+    fun oneGame(gameId: UUID): DataResultable<ProtoGameFrame> = DataResultable.failIfNull(gameCache[gameId], "Game not found.")
 
     /**
      * Tries to get one game with given name from cache.
@@ -87,7 +87,7 @@ class NetGameProvider(
      *
      * @return Collection of games.
      */
-    fun allGames(): Collection<ProtoGameFrame> = gameCache.asMap().values
+    fun allGames(): Collection<ProtoGameFrame> = gameCache.asMap().values // TODO: add extension for Cache#values
 
     /**
      * Tries to get one config with given name from cache.
@@ -95,14 +95,14 @@ class NetGameProvider(
      * @param name name of the config
      * @return [DataResultable] with result
      */
-    fun oneConfig(name: String): DataResultable<GameConfig> = DataResultable.failIfNull(configCache.getIfPresent(name), "Config not found.")
+    fun oneConfig(name: String): DataResultable<GameConfig> = DataResultable.failIfNull(configCache[name], "Config not found.")
 
     /**
      * Gets all available configs from cache.
      *
      * @return Collection of configs.
      */
-    fun allConfigs(): Collection<GameConfig> = configCache.asMap().values
+    fun allConfigs(): Collection<GameConfig> = configCache.asMap().values // TODO: add extension for Cache#values
 
     /**
      * Tries to get one store with given name from cache.
@@ -110,14 +110,14 @@ class NetGameProvider(
      * @param name name of the store
      * @return [DataResultable] with result
      */
-    fun oneStore(name: String): DataResultable<StoreHolder> = DataResultable.failIfNull(storeCache.getIfPresent(name), "Store not found.")
+    fun oneStore(name: String): DataResultable<StoreHolder> = DataResultable.failIfNull(storeCache[name], "Store not found.")
 
     /**
      * Gets all available stores from cache.
      *
      * @return Collection of stores.
      */
-    fun allStores(): Collection<StoreHolder> = storeCache.asMap().values
+    fun allStores(): Collection<StoreHolder> = storeCache.asMap().values // TODO: add extension for Cache#values
 
     /**
      * Tries to get one spawner with given name from cache.
@@ -125,14 +125,14 @@ class NetGameProvider(
      * @param name name of the spawner
      * @return [DataResultable] with result
      */
-    fun oneSpawner(name: String): DataResultable<ProtoSpawnerType> = DataResultable.failIfNull(spawnerCache.getIfPresent(name), "Spawner not found.")
+    fun oneSpawner(name: String): DataResultable<ProtoSpawnerType> = DataResultable.failIfNull(spawnerCache[name], "Spawner not found.")
 
     /**
      * Gets all available spawners from cache.
      *
      * @return Collection of spawners.
      */
-    fun allSpawners(): Collection<ProtoSpawnerType> = spawnerCache.asMap().values
+    fun allSpawners(): Collection<ProtoSpawnerType> = spawnerCache.asMap().values // TODO: add extension for Cache#values
 
     /**
      * Tries to retrieve the game from BAGR backend.
@@ -171,7 +171,7 @@ class NetGameProvider(
     // TODO: check this
     fun saveGame(frame: ProtoGameFrame): Mono<DataResultable<UUID>> = gameService.saveGame(frame)
         .map { DataResultable.from(it.result, UUID.fromString(frame.uuid)) }
-        .ifOk { gameCache.put(it, frame) }
+        .ifOk { gameCache[it] = frame }
         .onErrorHandle(logger)
 
     /**
@@ -186,7 +186,7 @@ class NetGameProvider(
         return gameService.saveSpawnerType(spawnerTypeHolder)
             .resultable()
             .ifOk {
-                spawnerCache.put(spawnerName, spawnerTypeHolder)
+                spawnerCache[spawnerName] = spawnerTypeHolder
                 logger.debug { "Saved new spawner [$spawnerName] for GameType[$gameTypeMessage]." }
             }
             .onErrorHandle(logger)
@@ -239,7 +239,7 @@ class NetGameProvider(
             val uuid = UUID.fromString(it.uuid)
 
             logger.debug { "Received game [${it.name}] - [$uuid] for GameType[${it.type}]" }
-            gameCache.put(uuid, it)
+            gameCache[uuid] = it
         }
         .onErrorHandle(logger)
 
@@ -253,7 +253,7 @@ class NetGameProvider(
                 val gameId = UUID.fromString(it.uuid)
 
                 logger.trace { "Caching new game [${it.name}]..." }
-                gameCache.put(gameId, it)
+                gameCache[gameId] = it
                 gameNameToUUID[it.name] = gameId
             }
             .onErrorHandle(logger)
@@ -262,7 +262,7 @@ class NetGameProvider(
         loadConfigs()
             .doOnNext {
                 logger.trace { "Caching new config [${it.name}]..." }
-                configCache.put(it.name, it)
+                configCache[it.name] = it
             }
             .onErrorHandle(logger)
             .subscribe()
@@ -270,7 +270,7 @@ class NetGameProvider(
         loadStores()
             .doOnNext {
                 logger.trace { "Caching new store [${it.name}]..." }
-                storeCache.put(it.name, it)
+                storeCache[it.name] = it
             }
             .onErrorHandle(logger)
             .subscribe()
@@ -278,7 +278,7 @@ class NetGameProvider(
         loadSpawners()
             .doOnNext {
                 logger.trace { "Caching new spawner type [${it.name}]..." }
-                spawnerCache.put(it.name, it)
+                spawnerCache[it.name] = it
             }
             .onErrorHandle(logger)
             .subscribe()
