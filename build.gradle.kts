@@ -22,4 +22,8 @@ subprojects {
         maven("https://repo.hoznet.dev/snapshots")
         maven("https://repo.screamingsandals.org/public")
     }
+
+    configurations.all {
+        resolutionStrategy.cacheDynamicVersionsFor(0, "seconds")
+    }
 }

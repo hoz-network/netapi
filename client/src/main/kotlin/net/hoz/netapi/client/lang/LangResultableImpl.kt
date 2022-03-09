@@ -8,61 +8,43 @@ import org.screamingsandals.lib.lang.Translation
 
 internal data class LangResultableImpl(
     val status: ResultStatus,
-    val translations: List<Translation> = mutableListOf(),
-    val error: Throwable?
+    val error: Throwable?,
+    override val translations: MutableList<Translation> = mutableListOf(),
+    override val templates: MutableList<Template> = mutableListOf()
 ) : LangResultable {
-    private val templates = mutableListOf<Template>()
+    constructor(status: ResultStatus) : this(status, null)
 
-    constructor(status: ResultStatus) : this(status, mutableListOf(), null)
+    constructor(status: ResultStatus, translations: List<Translation>) : this(status, null, translations.toMutableList(), mutableListOf())
 
-    constructor(status: ResultStatus, translations: List<Translation>) : this(status, translations, null)
+    constructor(status: ResultStatus, error: Throwable, translations: List<Translation>) : this(status, error, translations.toMutableList(), mutableListOf())
 
-    override fun translations(): List<Translation> {
-        return translations
+    override fun withTemplate(template: Template): LangResultable {
+        templates.add(template)
+        return this
     }
 
-    override fun templates(): MutableList<Template> {
-        return templates
-    }
+    override fun status(): ResultStatus = status
 
-    override fun status(): ResultStatus {
-        return status
-    }
+    override fun message(): String = translations.map { it.keys }.joinToString { ", " }
 
-    override fun message(): String {
-        return translations
-            .map { it.keys }
-            .joinToString { ", " }
-    }
+    override fun error(): Throwable? = error
 
-    override fun error(): Throwable? {
-        return error
-    }
+    override fun isOk(): Boolean = status == ResultStatus.OK
 
-    override fun isOk(): Boolean {
-        return status == ResultStatus.OK
-    }
+    override fun isFail(): Boolean = status == ResultStatus.FAIL
 
-    override fun isFail(): Boolean {
-        return status == ResultStatus.FAIL
-    }
-
-    override fun isWarning(): Boolean {
-        return status == ResultStatus.WARNING
-    }
+    override fun isWarning(): Boolean = status == ResultStatus.WARNING
 
     /**
      * @see com.iamceph.resulter.core.Resultable.convertor
      */
-    override fun convertor(): Convertor {
-        return object : Convertor {
-            override fun json(): String {
-                return Resulters.convertor().json(this@LangResultableImpl)
-            }
+    override fun convertor(): Convertor = object : Convertor {
+        override fun json(): String {
+            return Resulters.convertor().json(this@LangResultableImpl)
+        }
 
-            override fun <K> convert(target: Class<K>): K {
-                return Resulters.convertor().convert(this@LangResultableImpl, target)
-            }
+        override fun <K> convert(target: Class<K>): K {
+            return Resulters.convertor().convert(this@LangResultableImpl, target)
         }
     }
 }

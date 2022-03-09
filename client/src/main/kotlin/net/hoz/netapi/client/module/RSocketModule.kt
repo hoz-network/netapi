@@ -5,19 +5,20 @@ import io.rsocket.RSocket
 import io.rsocket.core.RSocketConnector
 import io.rsocket.core.Resume
 import io.rsocket.transport.netty.client.TcpClientTransport
+import mu.KotlinLogging
 import net.hoz.api.data.DataOperation
 import net.hoz.api.service.NetGameServiceClient
 import net.hoz.api.service.NetLangServiceClient
 import net.hoz.api.service.NetPlayerServiceClient
 import net.hoz.netapi.client.config.DataConfig
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 import reactor.core.publisher.Mono
 import reactor.netty.tcp.TcpClient
 import reactor.util.retry.Retry
 import java.time.Duration
 
 class RSocketModule(private val config: DataConfig) : AbstractModule() {
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log: Logger = KotlinLogging.logger {}
 
     override fun configure() {
         val rSocket = buildClient()
@@ -35,28 +36,26 @@ class RSocketModule(private val config: DataConfig) : AbstractModule() {
     }
 
     //TODO
-    private fun buildClient(): Mono<RSocket> {
-        val resume = Resume()
-            .sessionDuration(Duration.ofMinutes(5))
-            .retry(
-                Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(1))
-                    .doBeforeRetry { log.info("Disconnected. Trying to resume...") })
-
-        return RSocketConnector
-            .create()
-            .resume(resume)
-            .reconnect(
-                Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(1))
-                    .doAfterRetry { log.info("Reconnected: $it") }
-                    .doBeforeRetry { log.info("Reconnecting: $it") }
-            )
-            .connect(TcpClientTransport.create(
-                TcpClient.create()
-                    .doOnResolveError { connection, ex ->
-                        log.warn("Resolve error: $connection", ex)
-                    }
-                    .port(7878)
-                    .doOnDisconnected { log.info("Disconnected.") })
-            )
-    }
+    private fun buildClient(): Mono<RSocket> = RSocketConnector.create()
+        .resume(
+            Resume()
+                .sessionDuration(Duration.ofMinutes(5))
+                .retry(
+                    Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(1))
+                        .doBeforeRetry { log.info("Disconnected. Trying to resume...") }
+                )
+        )
+        .reconnect(
+            Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(1))
+                .doAfterRetry { log.info("Reconnected: $it") }
+                .doBeforeRetry { log.info("Reconnecting: $it") }
+        )
+        .connect(TcpClientTransport.create(
+            TcpClient.create()
+                .doOnResolveError { connection, ex ->
+                    log.warn("Resolve error: $connection", ex)
+                }
+                .port(7878)
+                .doOnDisconnected { log.info("Disconnected.") })
+        )
 }

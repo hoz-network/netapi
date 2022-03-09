@@ -32,7 +32,7 @@ class NetGameProvider(
     private val clientConfig: DataConfig,
     private val gameTypeMessage: MGameType
 ) : Controlled {
-    private val logger = KotlinLogging.logger {}
+    private val log = KotlinLogging.logger {}
 
     /**
      * Stores name-to-uuid values for games.
@@ -172,7 +172,7 @@ class NetGameProvider(
     fun saveGame(frame: ProtoGameFrame): Mono<DataResultable<UUID>> = gameService.saveGame(frame)
         .map { DataResultable.from(it.result, UUID.fromString(frame.uuid)) }
         .ifOk { gameCache[it] = frame }
-        .onErrorHandle(logger)
+        .onErrorHandle(log)
 
     /**
      * Tries to save given spawner to the backend and caches it.
@@ -187,9 +187,9 @@ class NetGameProvider(
             .resultable()
             .ifOk {
                 spawnerCache[spawnerName] = spawnerTypeHolder
-                logger.debug { "Saved new spawner [$spawnerName] for GameType[$gameTypeMessage]." }
+                log.debug { "Saved new spawner [$spawnerName] for GameType[$gameTypeMessage]." }
             }
-            .onErrorHandle(logger)
+            .onErrorHandle(log)
     }
 
     /**
@@ -198,8 +198,8 @@ class NetGameProvider(
      * @return Flux of [ProtoGameFrame]
      */
     fun loadGames(): Flux<ProtoGameFrame> = gameService.all(gameTypeMessage)
-        .doOnNext { logger.debug { "Received game [${it.name}] - [${it.uuid}] for GameType[${it.type}]." } }
-        .onErrorHandle(logger)
+        .doOnNext { log.debug { "Received game [${it.name}] - [${it.uuid}] for GameType[${it.type}]." } }
+        .onErrorHandle(log)
 
     /**
      * Retrieves all available configs from backend.
@@ -207,8 +207,8 @@ class NetGameProvider(
      * @return Flux of [GameConfig]
      */
     fun loadConfigs(): Flux<GameConfig> = gameService.allConfigs(gameTypeMessage)
-        .doOnNext { logger.debug { "Received config [${it.name}] for GameType[${it.type}]." } }
-        .onErrorHandle(logger)
+        .doOnNext { log.debug { "Received config [${it.name}] for GameType[${it.type}]." } }
+        .onErrorHandle(log)
 
     /**
      * Retrieves all available stores from backend.
@@ -216,8 +216,8 @@ class NetGameProvider(
      * @return Flux of [StoreHolder]
      */
     fun loadStores(): Flux<StoreHolder> = gameService.allStores(gameTypeMessage)
-        .doOnNext { logger.debug { "Received store holder [${it.name}] - [${it.uuid}] for GameType[${it.gameType}]." } }
-        .onErrorHandle(logger)
+        .doOnNext { log.debug { "Received store holder [${it.name}] - [${it.uuid}] for GameType[${it.gameType}]." } }
+        .onErrorHandle(log)
 
     /**
      * Retrieves all available spawners from backend.
@@ -225,8 +225,8 @@ class NetGameProvider(
      * @return Flux of [ProtoSpawnerType]
      */
     fun loadSpawners(): Flux<ProtoSpawnerType> = gameService.allSpawnerTypes(gameTypeMessage)
-        .doOnNext { logger.debug { "Received spawner [${it.name}] for GameType[${it.type}]." } }
-        .onErrorHandle(logger)
+        .doOnNext { log.debug { "Received spawner [${it.name}] for GameType[${it.type}]." } }
+        .onErrorHandle(log)
 
     /**
      * Processes the given [ResultableData] into a [ProtoGameFrame].
@@ -238,10 +238,10 @@ class NetGameProvider(
         .ifOk {
             val uuid = UUID.fromString(it.uuid)
 
-            logger.debug { "Received game [${it.name}] - [$uuid] for GameType[${it.type}]" }
+            log.debug { "Received game [${it.name}] - [$uuid] for GameType[${it.type}]" }
             gameCache[uuid] = it
         }
-        .onErrorHandle(logger)
+        .onErrorHandle(log)
 
     /**
      * Loads all cacheable values from the backend.
@@ -252,35 +252,35 @@ class NetGameProvider(
             .doOnNext {
                 val gameId = UUID.fromString(it.uuid)
 
-                logger.trace { "Caching new game [${it.name}]..." }
+                log.trace { "Caching new game [${it.name}]..." }
                 gameCache[gameId] = it
                 gameNameToUUID[it.name] = gameId
             }
-            .onErrorHandle(logger)
+            .onErrorHandle(log)
             .subscribe()
 
         loadConfigs()
             .doOnNext {
-                logger.trace { "Caching new config [${it.name}]..." }
+                log.trace { "Caching new config [${it.name}]..." }
                 configCache[it.name] = it
             }
-            .onErrorHandle(logger)
+            .onErrorHandle(log)
             .subscribe()
 
         loadStores()
             .doOnNext {
-                logger.trace { "Caching new store [${it.name}]..." }
+                log.trace { "Caching new store [${it.name}]..." }
                 storeCache[it.name] = it
             }
-            .onErrorHandle(logger)
+            .onErrorHandle(log)
             .subscribe()
 
         loadSpawners()
             .doOnNext {
-                logger.trace { "Caching new spawner type [${it.name}]..." }
+                log.trace { "Caching new spawner type [${it.name}]..." }
                 spawnerCache[it.name] = it
             }
-            .onErrorHandle(logger)
+            .onErrorHandle(log)
             .subscribe()
     }
 

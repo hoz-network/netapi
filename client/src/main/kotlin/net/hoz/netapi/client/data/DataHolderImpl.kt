@@ -7,14 +7,12 @@ import com.iamceph.resulter.kotlin.resultable
 import org.spongepowered.configurate.ConfigurationNode
 import org.spongepowered.configurate.gson.GsonConfigurationLoader
 
-class DataHolderImpl(json: String) : DataHolder {
-    override var root: ConfigurationNode = build(json)
+internal data class DataHolderImpl(override var root: ConfigurationNode) : DataHolder {
+    constructor(json: String) : this(GsonConfigurationLoader.builder().buildAndLoadString(json))
 
     override fun node(key: String): ConfigurationNode = root.node(key.split("\\."))
 
-    override fun update(input: String): Resultable = resultable { root = build(input) }
+    override fun update(input: String): Resultable = resultable { root = GsonConfigurationLoader.builder().buildAndLoadString(input) }
 
     override fun json(): DataResultable<String> = dataResultable { GsonConfigurationLoader.builder().buildAndSaveString(root) }
-
-    private fun build(input: String): ConfigurationNode = GsonConfigurationLoader.builder().buildAndLoadString(input)
 }

@@ -3,17 +3,15 @@ package net.hoz.netapi.client.data
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
 import com.iamceph.resulter.kotlin.dataResultable
-import org.spongepowered.configurate.ConfigurateException
 import org.spongepowered.configurate.ConfigurationNode
 
-interface DataHolder {
+sealed interface DataHolder {
     /**
      * Main configuration node.
      */
     var root: ConfigurationNode
 
     companion object {
-        @JvmStatic
         fun of(input: String): DataResultable<DataHolder> = dataResultable { DataHolderImpl(input) }
     }
 
