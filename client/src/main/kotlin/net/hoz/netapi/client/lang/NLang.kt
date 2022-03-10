@@ -3,6 +3,7 @@ package net.hoz.netapi.client.lang
 import net.hoz.api.data.GameType
 import org.screamingsandals.lib.lang.Translation
 
+@Suppress("unused", "FunctionName") // suppressing useless inspections
 object NLang {
     val NETWORK_PREFIX: Translation = Translation.of("network.prefix")
 

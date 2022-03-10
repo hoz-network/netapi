@@ -20,7 +20,7 @@ sealed interface DataHolder {
      * @param key key
      * @return node for the given key
      */
-    fun node(key: String) : ConfigurationNode
+    fun node(key: String): ConfigurationNode
 
     /**
      * Updates the root node with given data
