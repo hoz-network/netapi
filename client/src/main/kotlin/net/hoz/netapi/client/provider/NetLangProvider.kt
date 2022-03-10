@@ -3,16 +3,16 @@ package net.hoz.netapi.client.provider
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
+import mu.KotlinLogging
 import net.hoz.api.data.DataOperation
 import net.hoz.api.service.LangData
 import net.hoz.api.service.NetLangServiceClient
 import net.hoz.netapi.api.Controlled
-import net.hoz.netapi.api.ReactorHelper
+import net.hoz.netapi.api.onErrorHandle
 import net.hoz.netapi.client.config.DataConfig
 import net.hoz.netapi.client.data.DataHolder
 import net.hoz.netapi.client.lang.NLang
 import net.hoz.netapi.client.lang.NetTranslationContainer
-import net.hoz.netapi.client.util.NetUtils
 import net.kyori.adventure.text.Component
 import org.screamingsandals.lib.kotlin.unwrap
 import org.screamingsandals.lib.lang.Lang
@@ -20,22 +20,20 @@ import org.screamingsandals.lib.lang.LangService
 import org.screamingsandals.lib.lang.Message
 import org.screamingsandals.lib.player.PlayerWrapper
 import org.screamingsandals.lib.sender.CommandSenderWrapper
-import org.slf4j.LoggerFactory
+import org.slf4j.Logger
 import reactor.core.Disposable
 import reactor.core.publisher.Sinks.Many
 import java.time.Duration
 import java.util.*
 import javax.inject.Inject
 
-class NetLangProvider
-@Inject
-constructor(
+class NetLangProvider @Inject constructor(
     private val langService: NetLangServiceClient,
     private val playerManager: NetPlayerProvider,
     private val clientConfig: DataConfig,
     private val updateSink: Many<LangData>
 ) : LangService(), Controlled {
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log: Logger = KotlinLogging.logger {}
     private val FALLBACK_LOCALE = Locale.ENGLISH
     private var updateListener: Disposable? = null
 
@@ -62,7 +60,7 @@ constructor(
 
         updateListener = langService.subscribe(Empty.getDefaultInstance())
             .doOnNext { updateData(it) }
-            .onErrorResume { ReactorHelper.fluxError(it, log) }
+            .onErrorHandle(log)
             .subscribe()
     }
 
@@ -126,7 +124,7 @@ constructor(
      */
     private fun registerData(data: LangData) {
         val localeCode = data.code
-        val maybeLocale = NetUtils.resolveLocale(localeCode)
+        val maybeLocale = net.hoz.netapi.client.util.resolveLocale(localeCode)
         if (maybeLocale.isFail) {
             log.warn("Error registering locale[{}] - {}", localeCode, maybeLocale.message())
             return
@@ -144,7 +142,7 @@ constructor(
      */
     private fun updateData(langData: LangData) {
         val localeCode = langData.code
-        val maybeLocale = NetUtils.resolveLocale(localeCode)
+        val maybeLocale = net.hoz.netapi.client.util.resolveLocale(localeCode)
         if (maybeLocale.isFail) {
             log.warn("Error registering locale[$localeCode] - ${maybeLocale.message()}")
             return
@@ -200,7 +198,7 @@ constructor(
         langService.all(Empty.getDefaultInstance())
             .doOnNext { registerData(it) }
             .doOnComplete { onLoadingComplete() }
-            .onErrorResume { ReactorHelper.fluxError(it, log) }
+            .onErrorHandle(log)
             .subscribe()
     }
 

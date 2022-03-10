@@ -13,15 +13,13 @@ import net.hoz.netapi.client.provider.NetGameProvider
 import net.hoz.netapi.client.provider.NetLangProvider
 import net.hoz.netapi.client.provider.NetPlayerProvider
 
-data class ClientModule(private val config: DataConfig) : AbstractModule() {
-
+class ClientModule(private val config: DataConfig) : AbstractModule() {
     override fun configure() {
         install(SinksModule())
-        install(RSocketModule(config));
+        install(RSocketModule(config))
 
         bind(GameType::class.java).toInstance(config.gameType)
         bind(OriginSource::class.java).toInstance(config.origin)
-
 
         //TODO: rsocket configuration
         bind(NetPlayerProvider::class.java).asEagerSingleton()
@@ -34,12 +32,10 @@ data class ClientModule(private val config: DataConfig) : AbstractModule() {
 
     @Provides
     @Singleton
-    fun buildControlledService(injector: Injector): ControlledService {
-        val services = injector.allBindings.keys
+    fun buildControlledService(injector: Injector): ControlledService = ControlledService(
+        injector.allBindings.keys
             .filter { Controlled::class.java.isAssignableFrom(it.typeLiteral.rawType) }
             .map { injector.getInstance(it) as Controlled }
             .toList()
-
-        return ControlledService(services)
-    }
+    )
 }

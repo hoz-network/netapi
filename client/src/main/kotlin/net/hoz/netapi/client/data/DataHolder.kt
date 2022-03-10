@@ -2,23 +2,25 @@ package net.hoz.netapi.client.data
 
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
-import org.spongepowered.configurate.ConfigurateException
+import com.iamceph.resulter.kotlin.dataResultable
 import org.spongepowered.configurate.ConfigurationNode
 
-interface DataHolder {
-
+sealed interface DataHolder {
     /**
-     * Returns main configuration node.
-     * @return [ConfigurationNode]
+     * Main configuration node.
      */
-    fun root(): ConfigurationNode
+    var root: ConfigurationNode
+
+    companion object {
+        fun of(input: String): DataResultable<DataHolder> = dataResultable { DataHolderImpl(input) }
+    }
 
     /**
      * Node with key
      * @param key key
      * @return node for the given key
      */
-    fun node(key: String) : ConfigurationNode
+    fun node(key: String): ConfigurationNode
 
     /**
      * Updates the root node with given data
@@ -31,15 +33,4 @@ interface DataHolder {
      * @return all data in json
      */
     fun json(): DataResultable<String>
-
-    companion object {
-        fun of(input: String): DataResultable<DataHolder> {
-            return try {
-                val holder = DataHolderImpl(input)
-                DataResultable.ok(holder)
-            } catch (e: ConfigurateException) {
-                DataResultable.fail(e)
-            }
-        }
-    }
 }

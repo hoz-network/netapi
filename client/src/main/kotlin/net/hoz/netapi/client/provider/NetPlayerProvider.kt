@@ -13,9 +13,7 @@ import net.hoz.api.data.WUUID
 import net.hoz.api.service.NetPlayerRequest
 import net.hoz.api.service.NetPlayerServiceClient
 import net.hoz.netapi.api.Controlled
-import net.hoz.netapi.api.ReactorHelper
 import net.hoz.netapi.api.onErrorHandle
-import net.hoz.netapi.client.util.NetUtils
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
@@ -25,10 +23,7 @@ import java.time.Duration
 import java.util.*
 import javax.inject.Inject
 
-class NetPlayerProvider
-@Inject constructor(
-    private val netPlayerService: NetPlayerServiceClient
-) : Controlled {
+class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPlayerServiceClient) : Controlled {
     private val log = LoggerFactory.getLogger(javaClass)
     private val playerUpdater: Sinks.Many<NetPlayer> = Sinks.many().multicast().directBestEffort()
 
@@ -74,9 +69,7 @@ class NetPlayerProvider
      * @param uuid ID of the player
      * @return [DataResultable] result of the operation.
      */
-    fun getPlayer(uuid: UUID): DataResultable<NetPlayer> {
-        return DataResultable.failIfNull(playerCache.getIfPresent(uuid))
-    }
+    fun getPlayer(uuid: UUID): DataResultable<NetPlayer> = DataResultable.failIfNull(playerCache.getIfPresent(uuid))
 
     /**
      * Tries to get the [NetPlayerHistory] from the cache.
@@ -84,9 +77,7 @@ class NetPlayerProvider
      * @param uuid ID of the player
      * @return [DataResultable] result of the operation.
      */
-    fun getHistory(uuid: UUID): DataResultable<NetPlayerHistory> {
-        return DataResultable.failIfNull(historyCache.getIfPresent(uuid))
-    }
+    fun getHistory(uuid: UUID): DataResultable<NetPlayerHistory> = DataResultable.failIfNull(historyCache.getIfPresent(uuid))
 
     /**
      * Tries to get the [NetPlayer] data container from the BAGR instance.
@@ -96,15 +87,15 @@ class NetPlayerProvider
      * @return
      */
     fun loadPlayer(uuid: UUID, address: String): Mono<DataResultable<NetPlayer>> {
-        val request = NetPlayerRequest.newBuilder()
-            .setUUID(uuid.toString())
-            .setAddress(address)
-            .build()
-
-        return netPlayerService.dataFor(request)
-            .unpack(NetPlayer::class)
-            .ifOk { playerCache.put(uuid, it) }
-            .onErrorHandle(log)
+        return netPlayerService.dataFor(
+            NetPlayerRequest.newBuilder()
+                .setUUID(uuid.toString())
+                .setAddress(address)
+                .build()
+        )
+        .unpack(NetPlayer::class)
+        .ifOk { playerCache.put(uuid, it) }
+        .onErrorHandle(log)
     }
 
     /**
@@ -119,16 +110,14 @@ class NetPlayerProvider
                 .setValue(uuid.toString())
                 .build()
         )
-            .unpack(NetPlayerHistory::class)
-            .ifOk { historyCache.put(uuid, it) }
-            .onErrorHandle(log)
+        .unpack(NetPlayerHistory::class)
+        .ifOk { historyCache.put(uuid, it) }
+        .onErrorHandle(log)
     }
 
-    fun updateData(netPlayer: NetPlayer?): Mono<Resultable> {
-        return netPlayerService.updateData(netPlayer)
-            .resultable()
-            .onErrorHandle(log)
-    }
+    fun updateData(netPlayer: NetPlayer?): Mono<Resultable> = netPlayerService.updateData(netPlayer)
+        .resultable()
+        .onErrorHandle(log)
 
     fun playerOnline(uuid: UUID): Mono<Resultable> {
         return netPlayerService.playerOnline(
@@ -136,8 +125,8 @@ class NetPlayerProvider
                 .setValue(uuid.toString())
                 .build()
         )
-            .resultable()
-            .onErrorHandle(log)
+        .resultable()
+        .onErrorHandle(log)
     }
 
     fun playerOffline(uuid: UUID): Mono<Resultable> {
@@ -146,18 +135,16 @@ class NetPlayerProvider
                 .setValue(uuid.toString())
                 .build()
         )
-            .resultable()
-            .onErrorHandle(log)
+        .resultable()
+        .onErrorHandle(log)
     }
 
     fun resolveLocale(uuid: UUID): DataResultable<Locale> {
         val data = getPlayer(uuid)
         return if (data.isFail) {
             data.transform()
-        } else NetUtils.resolveLocale(data.data().settings.locale)
+        } else net.hoz.netapi.client.util.resolveLocale(data.data().settings.locale)
     }
 
-    fun playerUpdater(): Flux<NetPlayer> {
-        return playerUpdater.asFlux()
-    }
+    fun playerUpdater(): Flux<NetPlayer> = playerUpdater.asFlux()
 }

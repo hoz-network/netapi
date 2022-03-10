@@ -6,47 +6,28 @@ import net.kyori.adventure.text.minimessage.Template
 import org.screamingsandals.lib.lang.Translation
 
 sealed interface LangResultable : Resultable {
-    fun translations(): List<Translation>
+    val translations: List<Translation>
+    val templates: List<Template>
 
-    fun templates(): MutableList<Template>
-
-    fun withTemplate(template: Template): LangResultable {
-        templates().add(template)
-        return this
-    }
+    fun withTemplate(template: Template): LangResultable
 
     companion object {
-        fun ok(): LangResultable {
-            return LangResultableImpl(ResultStatus.OK)
-        }
+        fun ok(): LangResultable = LangResultableImpl(ResultStatus.OK)
 
-        fun ok(translation: Translation): LangResultable {
-            return LangResultableImpl(ResultStatus.OK, listOf(translation))
-        }
+        fun ok(translation: Translation): LangResultable = LangResultableImpl(ResultStatus.OK, listOf(translation))
 
-        fun ok(translations: List<Translation>): LangResultable {
-            return LangResultableImpl(ResultStatus.OK, translations)
-        }
+        fun ok(vararg translations: Translation): LangResultable = LangResultableImpl(ResultStatus.OK, translations.toList())
 
-        fun fail(translation: Translation): LangResultable {
-            return LangResultableImpl(ResultStatus.FAIL, listOf(translation))
-        }
+        fun ok(translations: List<Translation>): LangResultable = LangResultableImpl(ResultStatus.OK, translations)
 
-        fun fail(translations: List<Translation>): LangResultable? {
-            return LangResultableImpl(ResultStatus.FAIL, translations)
-        }
+        fun fail(translation: Translation): LangResultable = LangResultableImpl(ResultStatus.FAIL, listOf(translation))
 
-        fun fail(translations: Translation, throwable: Throwable): LangResultable {
-            return LangResultableImpl(ResultStatus.OK, listOf(translations), throwable)
-        }
+        fun fail(translations: List<Translation>): LangResultable = LangResultableImpl(ResultStatus.FAIL, translations)
 
+        fun fail(translations: Translation, throwable: Throwable): LangResultable = LangResultableImpl(ResultStatus.OK, throwable, listOf(translations))
 
-        fun fail(translations: List<Translation>, throwable: Throwable): LangResultable {
-            return LangResultableImpl(ResultStatus.OK, translations, throwable)
-        }
+        fun fail(translations: List<Translation>, throwable: Throwable): LangResultable = LangResultableImpl(ResultStatus.OK, throwable, translations)
 
-        fun fail(throwable: Throwable): LangResultable {
-            return LangResultableImpl(ResultStatus.OK, listOf(), throwable)
-        }
+        fun fail(throwable: Throwable): LangResultable = LangResultableImpl(ResultStatus.OK, throwable)
     }
 }

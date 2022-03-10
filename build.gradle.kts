@@ -13,12 +13,17 @@ subprojects {
     apply {
         plugin("java-library")
         plugin("idea")
+        plugin("org.jetbrains.kotlin.jvm")
         plugin("org.screamingsandals.plugin-builder")
     }
 
     repositories {
         mavenCentral()
-        maven(url = "https://repo.hoznet.dev/snapshots")
-        maven(url = "https://repo.screamingsandals.org/public")
+        maven("https://repo.hoznet.dev/snapshots")
+        maven("https://repo.screamingsandals.org/public")
+    }
+
+    configurations.all {
+        resolutionStrategy.cacheDynamicVersionsFor(0, "seconds")
     }
 }
