@@ -1,8 +1,8 @@
-name: Build Snapshot
+name: Build Release
 
 on:
-  push:
-    branches: [ main ]
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-${{ github.job }}-${{ matrix.java }}-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Build and publish with Gradle
-        run: ./gradlew snapshot screamCompile
+        run: ./gradlew -Prelease.useLastTag=true -Prelease final screamCompile
         env:
           OPTIMIZE_FOR_CI_CD: 1
           NEXUS_URL_RELEASE: https://repo.hoznet.dev/releases
