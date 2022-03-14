@@ -4,8 +4,8 @@ dependencies {
     compileOnly("commons-lang", "commons-lang", "2.6")
     api("com.google.guava", "guava", "30.1-jre")
 
-    api("net.hoz", "netproto", "1.0.0-SNAPSHOT")
-    api("com.iamceph.resulter", "kotlin-extensions", "1.1.6")
+    api("net.hoz", "netproto", "1.0.0")
+    api("com.iamceph.resulter", "kotlin-extensions", "1.1.7")
 
     //rsocket
     api("io.rsocket", "rsocket-core", "1.1.1")

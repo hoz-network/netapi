@@ -2,6 +2,7 @@ package net.hoz.netapi.client.lang
 
 import com.iamceph.resulter.core.Resultable.Convertor
 import com.iamceph.resulter.core.api.ResultStatus
+import com.iamceph.resulter.core.model.ProtoResultable
 import com.iamceph.resulter.core.model.Resulters
 import net.kyori.adventure.text.minimessage.Template
 import org.screamingsandals.lib.lang.Translation
@@ -14,14 +15,26 @@ internal data class LangResultableImpl(
 ) : LangResultable {
     constructor(status: ResultStatus) : this(status, null)
 
-    constructor(status: ResultStatus, translations: List<Translation>) : this(status, null, translations.toMutableList(), mutableListOf())
+    constructor(status: ResultStatus, translations: List<Translation>) : this(
+        status,
+        null,
+        translations.toMutableList(),
+        mutableListOf()
+    )
 
-    constructor(status: ResultStatus, error: Throwable, translations: List<Translation>) : this(status, error, translations.toMutableList(), mutableListOf())
+    constructor(status: ResultStatus, error: Throwable, translations: List<Translation>) : this(
+        status,
+        error,
+        translations.toMutableList(),
+        mutableListOf()
+    )
 
     override fun withTemplate(template: Template): LangResultable {
         templates.add(template)
         return this
     }
+
+    override fun asProto(): ProtoResultable = convertor().asProto()
 
     override fun status(): ResultStatus = status
 

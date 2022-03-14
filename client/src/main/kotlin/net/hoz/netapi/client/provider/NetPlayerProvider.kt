@@ -8,7 +8,8 @@ import com.iamceph.resulter.kotlin.ifOk
 import com.iamceph.resulter.kotlin.resultable
 import com.iamceph.resulter.kotlin.unpack
 import net.hoz.api.data.NetPlayer
-import net.hoz.api.data.NetPlayerHistory
+import net.hoz.api.data.PlayerHistory
+import net.hoz.api.data.PlayerSettings
 import net.hoz.api.data.WUUID
 import net.hoz.api.service.NetPlayerRequest
 import net.hoz.api.service.NetPlayerServiceClient
@@ -39,7 +40,7 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
      */
     private val historyCache = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofMinutes(30))
-        .build<UUID, NetPlayerHistory>()
+        .build<UUID, PlayerHistory>()
 
     private var updateListener: Disposable? = null
 
@@ -55,7 +56,7 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
 
         updateListener = netPlayerService.subscribeToUpdates(Empty.getDefaultInstance())
             .doOnNext { data: NetPlayer ->
-                val uuid = UUID.fromString(data.owner.uuid)
+                val uuid = UUID.fromString(data.id)
                 playerCache.put(uuid, data)
                 playerUpdater.tryEmitNext(data)
             }
@@ -77,7 +78,8 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
      * @param uuid ID of the player
      * @return [DataResultable] result of the operation.
      */
-    fun getHistory(uuid: UUID): DataResultable<NetPlayerHistory> = DataResultable.failIfNull(historyCache.getIfPresent(uuid))
+    fun getHistory(uuid: UUID): DataResultable<PlayerHistory> =
+        DataResultable.failIfNull(historyCache.getIfPresent(uuid))
 
     /**
      * Tries to get the [NetPlayer] data container from the BAGR instance.
@@ -93,9 +95,9 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
                 .setAddress(address)
                 .build()
         )
-        .unpack(NetPlayer::class)
-        .ifOk { playerCache.put(uuid, it) }
-        .onErrorHandle(log)
+            .unpack(NetPlayer::class)
+            .ifOk { playerCache.put(uuid, it) }
+            .onErrorHandle(log)
     }
 
     /**
@@ -104,18 +106,18 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
      * @param uuid
      * @return
      */
-    fun loadPlayerHistory(uuid: UUID): Mono<DataResultable<NetPlayerHistory>> {
+    fun loadPlayerHistory(uuid: UUID): Mono<DataResultable<PlayerHistory>> {
         return netPlayerService.historyFor(
             WUUID.newBuilder()
                 .setValue(uuid.toString())
                 .build()
         )
-        .unpack(NetPlayerHistory::class)
-        .ifOk { historyCache.put(uuid, it) }
-        .onErrorHandle(log)
+            .unpack(PlayerHistory::class)
+            .ifOk { historyCache.put(uuid, it) }
+            .onErrorHandle(log)
     }
 
-    fun updateData(netPlayer: NetPlayer?): Mono<Resultable> = netPlayerService.updateData(netPlayer)
+    fun updateSettings(settings: PlayerSettings): Mono<Resultable> = netPlayerService.updateSettings(settings)
         .resultable()
         .onErrorHandle(log)
 
@@ -125,8 +127,8 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
                 .setValue(uuid.toString())
                 .build()
         )
-        .resultable()
-        .onErrorHandle(log)
+            .resultable()
+            .onErrorHandle(log)
     }
 
     fun playerOffline(uuid: UUID): Mono<Resultable> {
@@ -135,8 +137,8 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
                 .setValue(uuid.toString())
                 .build()
         )
-        .resultable()
-        .onErrorHandle(log)
+            .resultable()
+            .onErrorHandle(log)
     }
 
     fun resolveLocale(uuid: UUID): DataResultable<Locale> {

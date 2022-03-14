@@ -10,7 +10,7 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven("https://repo.hoznet.dev/snapshots")
+        maven("https://repo.hoznet.dev/public")
         maven("https://repo.screamingsandals.org/public")
     }
 }
