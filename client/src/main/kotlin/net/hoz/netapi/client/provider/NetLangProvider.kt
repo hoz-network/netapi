@@ -3,10 +3,15 @@ package net.hoz.netapi.client.provider
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.subscribe
 import mu.KotlinLogging
 import net.hoz.api.data.DataOperation
 import net.hoz.api.service.LangData
 import net.hoz.api.service.NetLangServiceClient
+import net.hoz.api.service.NetLangServiceGrpcKt
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.onErrorHandle
 import net.hoz.netapi.client.config.DataConfig
@@ -28,13 +33,12 @@ import java.util.*
 import javax.inject.Inject
 
 class NetLangProvider @Inject constructor(
-    private val langService: NetLangServiceClient,
+    private val langService: NetLangServiceGrpcKt.NetLangServiceCoroutineStub,
     private val playerManager: NetPlayerProvider,
     private val clientConfig: DataConfig,
     private val updateSink: Many<LangData>
 ) : LangService(), Controlled {
     private val log: Logger = KotlinLogging.logger {}
-    private val FALLBACK_LOCALE = Locale.ENGLISH
     private var updateListener: Disposable? = null
 
     /**
@@ -53,15 +57,15 @@ class NetLangProvider @Inject constructor(
         cachedPrefixes.invalidateAll()
     }
 
-    override fun initialize() {
+    override suspend fun initialize() {
         updateListener?.dispose()
 
         loadLanguages()
 
+        updateListener = langService.subscribe(Empt)
         updateListener = langService.subscribe(Empty.getDefaultInstance())
-            .doOnNext { updateData(it) }
+            .onEach { updateData(it) }
             .onErrorHandle(log)
-            .subscribe()
     }
 
     /**
@@ -194,12 +198,12 @@ class NetLangProvider @Inject constructor(
     /**
      * Tries to load all languages from the BAGR:
      */
-    private fun loadLanguages() {
+    private suspend fun loadLanguages() {
         langService.all(Empty.getDefaultInstance())
-            .doOnNext { registerData(it) }
-            .doOnComplete { onLoadingComplete() }
+            .onEach { registerData(it) }
+            .onCompletion { onLoadingComplete() }
             .onErrorHandle(log)
-            .subscribe()
+            .collect()
     }
 
     private fun onLoadingComplete() {
@@ -222,5 +226,9 @@ class NetLangProvider @Inject constructor(
                 }
         }
         log.trace("Language integrity check OK.")
+    }
+
+    companion object {
+        private val FALLBACK_LOCALE = Locale.ENGLISH
     }
 }

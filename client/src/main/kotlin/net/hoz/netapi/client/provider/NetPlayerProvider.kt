@@ -51,7 +51,7 @@ class NetPlayerProvider @Inject constructor(private val netPlayerService: NetPla
         historyCache.invalidateAll()
     }
 
-    override fun initialize() {
+    override suspend fun initialize() {
         updateListener?.dispose()
 
         updateListener = netPlayerService.subscribeToUpdates(Empty.getDefaultInstance())

@@ -1,5 +1,7 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    kotlin("jvm") version "1.6.20-M1"
+    kotlin("jvm") version "1.6.20"
 
     id("org.screamingsandals.plugin-builder") version "1.0.76"
     id("nebula.release") version "16.0.0"
@@ -17,13 +19,25 @@ allprojects {
 
 subprojects {
     apply {
+        plugin("org.jetbrains.kotlin.jvm")
         plugin("java-library")
         plugin("idea")
-        plugin("org.jetbrains.kotlin.jvm")
         plugin("org.screamingsandals.plugin-builder")
     }
 
     configurations.all {
         resolutionStrategy.cacheDynamicVersionsFor(0, "seconds")
+    }
+
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
     }
 }

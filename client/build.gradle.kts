@@ -1,22 +1,20 @@
+import net.hoz.netapi.Versions
+
 dependencies {
     api(project(":api"))
 
     compileOnly("commons-lang", "commons-lang", "2.6")
     api("com.google.guava", "guava", "30.1-jre")
 
-    api("net.hoz", "netproto", "1.0.0")
-    api("com.iamceph.resulter", "kotlin-extensions", "1.1.7")
+    api("net.hoz", "netproto", Versions.NETPROTO)
+    api("com.iamceph.resulter", "kotlin-extensions", Versions.RESULTER)
 
-    //rsocket
-    api("io.rsocket", "rsocket-core", "1.1.1")
-    api("io.rsocket", "rsocket-transport-netty", "1.1.1")
+    api("org.screamingsandals.lib", "core-common", Versions.SANDALS)
+    api("org.screamingsandals.lib", "command-common", Versions.SANDALS)
+    api("org.screamingsandals.lib", "lang", Versions.SANDALS)
+    api("org.screamingsandals.lib", "kotlin-extra", Versions.SANDALS)
 
-    api("org.screamingsandals.lib", "core-common", "2.0.1-SNAPSHOT")
-    api("org.screamingsandals.lib", "command-common", "2.0.1-SNAPSHOT")
-    api("org.screamingsandals.lib", "lang", "2.0.1-SNAPSHOT")
-    api("org.screamingsandals.lib", "kotlin-extra", "2.0.1-SNAPSHOT")
-
-    api("com.google.inject", "guice", "5.0.1")
-    api("com.github.ben-manes.caffeine", "caffeine", "3.0.3")
-    api("network.hoz", "kaffeine", "1.0.0-SNAPSHOT")
+    api("com.google.inject", "guice", Versions.GUICE)
+    api("com.github.ben-manes.caffeine", "caffeine", Versions.CAFFEINE)
+    api("network.hoz", "kaffeine", Versions.KAFFEINE)
 }
