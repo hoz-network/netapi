@@ -1,7 +1,7 @@
 package net.hoz.netapi
 
 object Versions {
-    const val NETPROTO = "0.1.0-SNAPSHOT"
+    const val NETPROTO = "1.1.0"
     const val RESULTER = "1.1.7"
     const val SANDALS = "2.0.1-SNAPSHOT"
     const val GUICE = "5.1.0"

@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.20"
+    kotlin("jvm") version "1.6.21"
 
     id("org.screamingsandals.plugin-builder") version "1.0.76"
     id("nebula.release") version "16.0.0"
@@ -23,10 +23,6 @@ subprojects {
         plugin("java-library")
         plugin("idea")
         plugin("org.screamingsandals.plugin-builder")
-    }
-
-    configurations.all {
-        resolutionStrategy.cacheDynamicVersionsFor(0, "seconds")
     }
 
     tasks.withType<KotlinCompile> {
