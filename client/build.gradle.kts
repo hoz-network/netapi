@@ -17,4 +17,6 @@ dependencies {
     api("com.google.inject", "guice", Versions.GUICE)
     api("com.github.ben-manes.caffeine", "caffeine", Versions.CAFFEINE)
     api("network.hoz", "kaffeine", Versions.KAFFEINE)
+
+    api("org.jetbrains.kotlinx", "kotlinx-coroutines-core", Versions.COROUTINES)
 }

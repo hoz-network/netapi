@@ -2,15 +2,12 @@ package net.hoz.netapi.client.provider
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.google.protobuf.StringValue
 import com.google.protobuf.stringValue
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
 import com.iamceph.resulter.core.model.ResultableData
-import com.iamceph.resulter.kotlin.ifOk
 import com.iamceph.resulter.kotlin.resultable
 import com.iamceph.resulter.kotlin.unpack
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import mu.KotlinLogging
 import net.hoz.api.data.WUUID
@@ -21,23 +18,23 @@ import net.hoz.api.data.game.StoreHolder
 import net.hoz.api.data.wUUID
 import net.hoz.api.service.MGameType
 import net.hoz.api.service.NetGameServiceGrpcKt
+import net.hoz.api.service.mGameType
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.onErrorHandle
 import net.hoz.netapi.client.config.DataConfig
 import net.hoz.netproto.asUuid
 import network.hoz.kaffeine.get
 import network.hoz.kaffeine.set
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.*
 import javax.inject.Inject
 
-class NetGameProvider(
+private val log = KotlinLogging.logger {}
+
+class NetGameProvider @Inject constructor(
     private val gameService: NetGameServiceGrpcKt.NetGameServiceCoroutineStub,
     private val clientConfig: DataConfig,
-    private val gameTypeMessage: MGameType
+    private val gameType: MGameType = mGameType { type = clientConfig.gameType }
 ) : Controlled {
-    private val log = KotlinLogging.logger {}
 
     /**
      * Stores name-to-uuid values for games.
@@ -51,16 +48,6 @@ class NetGameProvider(
     private val storeCache: Cache<String, StoreHolder> = Caffeine.newBuilder().build()
 
     private val spawnerCache: Cache<String, ProtoSpawnerType> = Caffeine.newBuilder().build()
-
-    @Inject
-    @Suppress("unused") // constructor needed for guice, don't remove
-    constructor(gameService: NetGameServiceGrpcKt.NetGameServiceCoroutineStub, clientConfig: DataConfig) : this(
-        gameService,
-        clientConfig,
-        MGameType.newBuilder()
-            .setType(clientConfig.gameType)
-            .build()
-    )
 
     override suspend fun initialize() {
         subscribeForUpdates()
@@ -152,7 +139,7 @@ class NetGameProvider(
      * @return [DataResultable] of the operation.
      */
     suspend fun loadGame(gameId: UUID): DataResultable<ProtoGameFrame> =
-        doGameLoading(
+        handleGameData(
             gameService.oneById(
                 wUUID { gameId.toString() }
             )
@@ -165,9 +152,9 @@ class NetGameProvider(
      * @return [DataResultable] of the operation.
      */
     suspend fun loadGame(name: String): DataResultable<ProtoGameFrame> =
-        doGameLoading(
+        handleGameData(
             gameService.oneByName(
-                stringValue { value = "name" }
+                stringValue { value = name }
             )
         )
 
@@ -192,13 +179,15 @@ class NetGameProvider(
      * @return [Resultable] result of this operation.
      */
     suspend fun saveSpawnerType(spawnerTypeHolder: ProtoSpawnerType): Resultable {
-        val spawnerName = spawnerTypeHolder.name
-
         return gameService.saveSpawnerType(spawnerTypeHolder)
             .resultable()
-            .ifOk {
-                spawnerCache[spawnerName] = spawnerTypeHolder
-                log.debug { "Saved new spawner [$spawnerName] for GameType[$gameTypeMessage]." }
+            .also {
+                if (it.isOk) {
+                    val spawnerName = spawnerTypeHolder.name
+
+                    spawnerCache[spawnerName] = spawnerTypeHolder
+                    log.debug { "Saved new spawner [$spawnerName] for GameType[$gameType]." }
+                }
             }
     }
 
@@ -207,7 +196,7 @@ class NetGameProvider(
      *
      * @return Flux of [ProtoGameFrame]
      */
-    fun loadGames(): Flow<ProtoGameFrame> = gameService.all(gameTypeMessage)
+    fun loadGames(): Flow<ProtoGameFrame> = gameService.all(gameType)
         .onEach { log.debug { "Received game [${it.name}] - [${it.uuid}] for GameType[${it.type}]." } }
         .onErrorHandle(log)
 
@@ -217,7 +206,7 @@ class NetGameProvider(
      *
      * @return Flux of [GameConfig]
      */
-    fun loadConfigs(): Flow<GameConfig> = gameService.allConfigs(gameTypeMessage)
+    fun loadConfigs(): Flow<GameConfig> = gameService.allConfigs(gameType)
         .onEach { log.debug { "Received config [${it.name}] for GameType[${it.type}]." } }
         .onErrorHandle(log)
 
@@ -226,7 +215,7 @@ class NetGameProvider(
      *
      * @return Flux of [StoreHolder]
      */
-    fun loadStores(): Flow<StoreHolder> = gameService.allStores(gameTypeMessage)
+    fun loadStores(): Flow<StoreHolder> = gameService.allStores(gameType)
         .onEach { log.debug { "Received store holder [${it.name}] - [${it.id}] for GameType[${it.gameType}]." } }
         .onErrorHandle(log)
 
@@ -235,7 +224,7 @@ class NetGameProvider(
      *
      * @return Flux of [ProtoSpawnerType]
      */
-    fun loadSpawners(): Flow<ProtoSpawnerType> = gameService.allSpawnerTypes(gameTypeMessage)
+    fun loadSpawners(): Flow<ProtoSpawnerType> = gameService.allSpawnerTypes(gameType)
         .onEach { log.debug { "Received spawner [${it.name}] for GameType[${it.type}]." } }
         .onErrorHandle(log)
 
@@ -245,7 +234,7 @@ class NetGameProvider(
      * @param loadingMono mono from the backend
      * @return mono with [DataResultable] result of the operation.
      */
-    private fun doGameLoading(data: ResultableData): DataResultable<ProtoGameFrame> =
+    private fun handleGameData(data: ResultableData): DataResultable<ProtoGameFrame> =
         data.unpack(ProtoGameFrame::class)
             .ifOk {
                 val uuid = UUID.fromString(it.uuid)
@@ -294,5 +283,7 @@ class NetGameProvider(
             .collect()
     }
 
-    private fun subscribeForUpdates() {}
+    private fun subscribeForUpdates() {
+        //TODO: handle game updates
+    }
 }

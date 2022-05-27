@@ -1,6 +1,6 @@
 package net.hoz.netapi.client.config
 
-data class RSocketConfig(
+data class GrpcConfig(
     val address: String,
     val port: Int
 )

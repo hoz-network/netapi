@@ -3,14 +3,18 @@ package net.hoz.netapi.client.provider
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
+import com.iamceph.resulter.kotlin.dataResultable
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.subscribe
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.hoz.api.data.DataOperation
 import net.hoz.api.service.LangData
-import net.hoz.api.service.NetLangServiceClient
 import net.hoz.api.service.NetLangServiceGrpcKt
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.onErrorHandle
@@ -18,7 +22,9 @@ import net.hoz.netapi.client.config.DataConfig
 import net.hoz.netapi.client.data.DataHolder
 import net.hoz.netapi.client.lang.NLang
 import net.hoz.netapi.client.lang.NetTranslationContainer
+import net.hoz.netapi.client.util.NetUtils
 import net.kyori.adventure.text.Component
+import org.apache.commons.lang.LocaleUtils
 import org.screamingsandals.lib.kotlin.unwrap
 import org.screamingsandals.lib.lang.Lang
 import org.screamingsandals.lib.lang.LangService
@@ -26,20 +32,21 @@ import org.screamingsandals.lib.lang.Message
 import org.screamingsandals.lib.player.PlayerWrapper
 import org.screamingsandals.lib.sender.CommandSenderWrapper
 import org.slf4j.Logger
-import reactor.core.Disposable
 import reactor.core.publisher.Sinks.Many
 import java.time.Duration
 import java.util.*
 import javax.inject.Inject
 
+private val log: Logger = KotlinLogging.logger {}
+
 class NetLangProvider @Inject constructor(
     private val langService: NetLangServiceGrpcKt.NetLangServiceCoroutineStub,
     private val playerManager: NetPlayerProvider,
     private val clientConfig: DataConfig,
-    private val updateSink: Many<LangData>
+    private val updateSink: Many<LangData>,
 ) : LangService(), Controlled {
-    private val log: Logger = KotlinLogging.logger {}
-    private var updateListener: Disposable? = null
+
+    private var langUpdateJob: Job? = null
 
     /**
      * Cache for per-locale prefixes. This is not player dependent.
@@ -53,19 +60,22 @@ class NetLangProvider @Inject constructor(
     }
 
     override fun dispose() {
-        updateListener?.dispose()
+        langUpdateJob?.cancel("NetLangProvider is disposing.")
         cachedPrefixes.invalidateAll()
     }
 
     override suspend fun initialize() {
-        updateListener?.dispose()
-
         loadLanguages()
 
-        updateListener = langService.subscribe(Empt)
-        updateListener = langService.subscribe(Empty.getDefaultInstance())
-            .onEach { updateData(it) }
-            .onErrorHandle(log)
+        langUpdateJob = coroutineScope {
+            launch {
+                langService.subscribe(Empty.getDefaultInstance())
+                    .onEach { updateData(it) }
+                    .onErrorHandle(log)
+                    .cancellable()
+                    .collect()
+            }
+        }
     }
 
     /**
@@ -128,7 +138,7 @@ class NetLangProvider @Inject constructor(
      */
     private fun registerData(data: LangData) {
         val localeCode = data.code
-        val maybeLocale = net.hoz.netapi.client.util.resolveLocale(localeCode)
+        val maybeLocale = dataResultable { LocaleUtils.toLocale(localeCode) }
         if (maybeLocale.isFail) {
             log.warn("Error registering locale[{}] - {}", localeCode, maybeLocale.message())
             return
@@ -146,7 +156,7 @@ class NetLangProvider @Inject constructor(
      */
     private fun updateData(langData: LangData) {
         val localeCode = langData.code
-        val maybeLocale = net.hoz.netapi.client.util.resolveLocale(localeCode)
+        val maybeLocale = NetUtils.resolveLocale(localeCode)
         if (maybeLocale.isFail) {
             log.warn("Error registering locale[$localeCode] - ${maybeLocale.message()}")
             return

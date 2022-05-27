@@ -15,13 +15,10 @@ import net.hoz.netapi.client.provider.NetPlayerProvider
 
 class ClientModule(private val config: DataConfig) : AbstractModule() {
     override fun configure() {
-        install(SinksModule())
-        install(RSocketModule(config))
-
+        //TODO: gRPC stub providing
         bind(GameType::class.java).toInstance(config.gameType)
         bind(OriginSource::class.java).toInstance(config.origin)
 
-        //TODO: rsocket configuration
         bind(NetPlayerProvider::class.java).asEagerSingleton()
         bind(NetLangProvider::class.java).asEagerSingleton()
 
