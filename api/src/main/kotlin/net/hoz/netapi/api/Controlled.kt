@@ -9,5 +9,5 @@ interface Controlled : Disposable {
     /**
      * Method that is called on the application start.
      */
-    fun initialize()
+    suspend fun initialize()
 }
