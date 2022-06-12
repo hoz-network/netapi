@@ -19,14 +19,10 @@ package net.hoz.netapi.client.provider
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.protobuf.Empty
 import com.iamceph.resulter.core.DataResultable
-import com.iamceph.resulter.kotlin.dataResultable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import net.hoz.api.data.DataOperation
@@ -39,30 +35,31 @@ import net.hoz.netapi.client.data.DataHolder
 import net.hoz.netapi.client.lang.NLang
 import net.hoz.netapi.client.lang.NetTranslationContainer
 import net.hoz.netapi.client.util.NetUtils
-import net.kyori.adventure.text.Component
-import org.apache.commons.lang.LocaleUtils
+import org.apache.commons.lang3.LocaleUtils
 import org.screamingsandals.lib.kotlin.unwrap
 import org.screamingsandals.lib.lang.Lang
 import org.screamingsandals.lib.lang.LangService
 import org.screamingsandals.lib.lang.Message
 import org.screamingsandals.lib.player.PlayerWrapper
 import org.screamingsandals.lib.sender.CommandSenderWrapper
-import org.slf4j.Logger
-import reactor.core.publisher.Sinks.Many
+import org.screamingsandals.lib.spectator.Component
 import java.time.Duration
 import java.util.*
 import javax.inject.Inject
 
-private val log: Logger = KotlinLogging.logger {}
+private val log = KotlinLogging.logger {}
 
+//TODO: clean up this mess
 class NetLangProvider @Inject constructor(
     private val langService: NetLangServiceGrpcKt.NetLangServiceCoroutineStub,
-    private val playerManager: NetPlayerProvider,
+    private val playerProvider: NetPlayerProvider,
     private val clientConfig: DataConfig,
-    private val updateSink: Many<LangData>,
+    private val langUpdater: MutableSharedFlow<LangData>,
 ) : LangService(), Controlled {
 
-    private var langUpdateJob: Job? = null
+    companion object {
+        private val FALLBACK_LOCALE = Locale.ENGLISH
+    }
 
     /**
      * Cache for per-locale prefixes. This is not player dependent.
@@ -70,6 +67,8 @@ class NetLangProvider @Inject constructor(
     private val cachedPrefixes = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofMinutes(30))
         .build<Locale, Component>()
+
+    private var langUpdateJob: Job? = null
 
     init {
         Lang.initDefault(this)
@@ -114,8 +113,7 @@ class NetLangProvider @Inject constructor(
                     .getForJoined(sender)
             }
 
-            return@get Message
-                .of(NLang.NETWORK_PREFIX)
+            return@get Message.of(NLang.NETWORK_PREFIX)
                 .getForJoined(sender)
         }
     }
@@ -140,12 +138,14 @@ class NetLangProvider @Inject constructor(
         }
 
         val playerId = sender.unwrap(PlayerWrapper::class).uuid
-        val maybeLocale = playerManager.resolveLocale(playerId)
+        val maybeLocale = playerProvider.resolveLocale(playerId)
 
         return if (maybeLocale.isFail) {
             super.resolveLocale(sender)
         } else maybeLocale.data()
     }
+
+    fun localeUpdater(): SharedFlow<LangData> = langUpdater
 
     /**
      * Registering of the actual language data.
@@ -154,13 +154,9 @@ class NetLangProvider @Inject constructor(
      */
     private fun registerData(data: LangData) {
         val localeCode = data.code
-        val maybeLocale = dataResultable { LocaleUtils.toLocale(localeCode) }
-        if (maybeLocale.isFail) {
-            log.warn("Error registering locale[{}] - {}", localeCode, maybeLocale.message())
-            return
-        }
-        val locale = maybeLocale.data()
-        log.trace("Registering new language [{}] - [{}]!", locale.language, localeCode)
+        val locale = LocaleUtils.toLocale(localeCode)
+        log.debug { "Registering new language[${locale.language} - locale[$locale]" }
+
         buildContainer(locale, data)
             .ifOk { registerContainer(it) }
     }
@@ -174,22 +170,22 @@ class NetLangProvider @Inject constructor(
         val localeCode = langData.code
         val maybeLocale = NetUtils.resolveLocale(localeCode)
         if (maybeLocale.isFail) {
-            log.warn("Error registering locale[$localeCode] - ${maybeLocale.message()}")
+            log.warn { "Error registering locale[$localeCode] - ${maybeLocale.message}" }
             return
         }
 
         val locale = maybeLocale.data()
-        log.trace("Received language update for code [$localeCode]")
+        log.debug { "Received locale update[$localeCode]" }
         if (!containers.containsKey(locale)) {
             registerData(langData)
-            updateSink.tryEmitNext(langData)
+            langUpdater.tryEmit(langData)
             return
         }
 
         val container = containers[locale] as NetTranslationContainer
         container.dataHolder.update(langData.data)
         cachedPrefixes.invalidate(locale)
-        updateSink.tryEmitNext(langData)
+        langUpdater.tryEmit(langData)
     }
 
     /**
@@ -252,9 +248,5 @@ class NetLangProvider @Inject constructor(
                 }
         }
         log.trace("Language integrity check OK.")
-    }
-
-    companion object {
-        private val FALLBACK_LOCALE = Locale.ENGLISH
     }
 }

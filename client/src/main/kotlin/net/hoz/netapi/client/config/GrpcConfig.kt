@@ -17,6 +17,7 @@
 package net.hoz.netapi.client.config
 
 data class GrpcConfig(
-    val address: String,
-    val port: Int
+    val address: String = "localhost",
+    val port: Int = 6969,
+    val channelDeadlineMs: Long = Long.MAX_VALUE
 )

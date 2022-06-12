@@ -18,7 +18,7 @@ package net.hoz.netapi.client.util
 
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.kotlin.dataResultable
-import org.apache.commons.lang.LocaleUtils
+import org.apache.commons.lang3.LocaleUtils
 import java.util.*
 
 object NetUtils {

@@ -18,14 +18,14 @@ package net.hoz.netapi.client.lang
 
 import com.iamceph.resulter.core.Resultable
 import com.iamceph.resulter.core.api.ResultStatus
-import net.kyori.adventure.text.minimessage.Template
 import org.screamingsandals.lib.lang.Translation
+import org.screamingsandals.lib.spectator.mini.placeholders.Placeholder
 
 sealed interface LangResultable : Resultable {
     val translations: List<Translation>
-    val templates: List<Template>
+    val placeholders: List<Placeholder>
 
-    fun withTemplate(template: Template): LangResultable
+    fun withTemplate(placeholder: Placeholder): LangResultable
 
     companion object {
         fun ok(): LangResultable = LangResultableImpl(ResultStatus.OK)

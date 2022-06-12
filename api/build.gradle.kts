@@ -1,6 +1,6 @@
-dependencies {
-    compileOnly("io.projectreactor", "reactor-core", "3.4.12")
+import net.hoz.netapi.Versions
 
-    api("io.github.microutils", "kotlin-logging-jvm", "2.1.20")
-    api("net.hoz", "netproto", net.hoz.netapi.Versions.NETPROTO)
+dependencies {
+    api("io.github.microutils", "kotlin-logging-jvm", Versions.KOTLIN_LOGGING)
+    api("net.hoz", "netproto", Versions.NETPROTO)
 }

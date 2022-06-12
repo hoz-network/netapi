@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.21"
+    kotlin("jvm") version "1.7.0"
 
-    id("org.screamingsandals.plugin-builder") version "1.0.76"
+    id("org.screamingsandals.plugin-builder") version "1.0.77"
     id("nebula.release") version "16.0.0"
 }
 

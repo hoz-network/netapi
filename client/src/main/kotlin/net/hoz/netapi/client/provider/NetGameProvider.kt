@@ -18,22 +18,26 @@ package net.hoz.netapi.client.provider
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.google.protobuf.stringValue
 import com.iamceph.resulter.core.DataResultable
 import com.iamceph.resulter.core.Resultable
 import com.iamceph.resulter.core.model.ResultableData
 import com.iamceph.resulter.kotlin.resultable
 import com.iamceph.resulter.kotlin.unpack
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import net.hoz.api.data.GameType
 import net.hoz.api.data.WUUID
 import net.hoz.api.data.game.GameConfig
 import net.hoz.api.data.game.ProtoGameFrame
 import net.hoz.api.data.game.ProtoSpawnerType
 import net.hoz.api.data.game.StoreHolder
 import net.hoz.api.data.wUUID
-import net.hoz.api.service.MGameType
 import net.hoz.api.service.NetGameServiceGrpcKt
+import net.hoz.api.service.gameByNameRequest
 import net.hoz.api.service.mGameType
 import net.hoz.netapi.api.Controlled
 import net.hoz.netapi.api.onErrorHandle
@@ -43,34 +47,36 @@ import network.hoz.kaffeine.get
 import network.hoz.kaffeine.set
 import java.util.*
 import javax.inject.Inject
+import kotlin.coroutines.coroutineContext
 
 private val log = KotlinLogging.logger {}
 
 class NetGameProvider @Inject constructor(
     private val gameService: NetGameServiceGrpcKt.NetGameServiceCoroutineStub,
-    private val clientConfig: DataConfig,
-    private val gameType: MGameType = mGameType { type = clientConfig.gameType }
+    private val clientConfig: DataConfig
 ) : Controlled {
 
     /**
      * Stores name-to-uuid values for games.
      */
     private val gameNameToUUID: MutableMap<String, UUID> = mutableMapOf()
-
     private val gameCache: Cache<UUID, ProtoGameFrame> = Caffeine.newBuilder().build()
-
     private val configCache: Cache<String, GameConfig> = Caffeine.newBuilder().build()
-
     private val storeCache: Cache<String, StoreHolder> = Caffeine.newBuilder().build()
-
     private val spawnerCache: Cache<String, ProtoSpawnerType> = Caffeine.newBuilder().build()
 
+    private var gameUpdateJob: Job? = null
+
     override suspend fun initialize() {
-        subscribeForUpdates()
-        createDataCache()
+        gameUpdateJob?.cancel("Staring new listening for Game updates")
+
+        gameUpdateJob = coroutineScope {
+            launch { subscribeForUpdates() }
+        }
     }
 
     override fun dispose() {
+        gameUpdateJob?.cancel("Ending listening for Game updates.")
         TODO("Not yet implemented")
     }
 
@@ -170,7 +176,10 @@ class NetGameProvider @Inject constructor(
     suspend fun loadGame(name: String): DataResultable<ProtoGameFrame> =
         handleGameData(
             gameService.oneByName(
-                stringValue { value = name }
+                gameByNameRequest {
+                    this.name = name
+                    this.type = clientConfig.gameType
+                }
             )
         )
 
@@ -202,7 +211,7 @@ class NetGameProvider @Inject constructor(
                     val spawnerName = spawnerTypeHolder.name
 
                     spawnerCache[spawnerName] = spawnerTypeHolder
-                    log.debug { "Saved new spawner [$spawnerName] for GameType[$gameType]." }
+                    log.debug { "Saved new spawner [$spawnerName] for GameType[${spawnerTypeHolder.type}]." }
                 }
             }
     }
@@ -212,7 +221,7 @@ class NetGameProvider @Inject constructor(
      *
      * @return Flux of [ProtoGameFrame]
      */
-    fun loadGames(): Flow<ProtoGameFrame> = gameService.all(gameType)
+    fun loadGames(type: GameType): Flow<ProtoGameFrame> = gameService.all(mGameType { this.type = type })
         .onEach { log.debug { "Received game [${it.name}] - [${it.uuid}] for GameType[${it.type}]." } }
         .onErrorHandle(log)
 
@@ -222,7 +231,7 @@ class NetGameProvider @Inject constructor(
      *
      * @return Flux of [GameConfig]
      */
-    fun loadConfigs(): Flow<GameConfig> = gameService.allConfigs(gameType)
+    fun loadConfigs(type: GameType): Flow<GameConfig> = gameService.allConfigs(mGameType { this.type = type })
         .onEach { log.debug { "Received config [${it.name}] for GameType[${it.type}]." } }
         .onErrorHandle(log)
 
@@ -231,7 +240,7 @@ class NetGameProvider @Inject constructor(
      *
      * @return Flux of [StoreHolder]
      */
-    fun loadStores(): Flow<StoreHolder> = gameService.allStores(gameType)
+    fun loadStores(type: GameType): Flow<StoreHolder> = gameService.allStores(mGameType { this.type = type })
         .onEach { log.debug { "Received store holder [${it.name}] - [${it.id}] for GameType[${it.gameType}]." } }
         .onErrorHandle(log)
 
@@ -240,9 +249,10 @@ class NetGameProvider @Inject constructor(
      *
      * @return Flux of [ProtoSpawnerType]
      */
-    fun loadSpawners(): Flow<ProtoSpawnerType> = gameService.allSpawnerTypes(gameType)
-        .onEach { log.debug { "Received spawner [${it.name}] for GameType[${it.type}]." } }
-        .onErrorHandle(log)
+    fun loadSpawners(type: GameType): Flow<ProtoSpawnerType> =
+        gameService.allSpawnerTypes(mGameType { this.type = type })
+            .onEach { log.debug { "Received spawner [${it.name}] for GameType[${it.type}]." } }
+            .onErrorHandle(log)
 
     /**
      * Processes the given [ResultableData] into a [ProtoGameFrame].
@@ -263,8 +273,8 @@ class NetGameProvider @Inject constructor(
      * Loads all cacheable values from the backend.
      * The order shouldn't be important at all.
      */
-    private suspend fun createDataCache() {
-        loadGames()
+    suspend fun fetchData(type: GameType) {
+        loadGames(type)
             .onEach {
                 val gameId = UUID.fromString(it.uuid)
 
@@ -274,7 +284,7 @@ class NetGameProvider @Inject constructor(
             }
             .collect()
 
-        loadConfigs()
+        loadConfigs(type)
             .onEach {
                 log.trace { "Caching new config [${it.name}]..." }
                 configCache[it.name] = it
@@ -282,7 +292,7 @@ class NetGameProvider @Inject constructor(
             .onErrorHandle(log)
             .collect()
 
-        loadStores()
+        loadStores(type)
             .onEach {
                 log.trace { "Caching new store [${it.name}]..." }
                 storeCache[it.name] = it
@@ -290,7 +300,7 @@ class NetGameProvider @Inject constructor(
             .onErrorHandle(log)
             .collect()
 
-        loadSpawners()
+        loadSpawners(type)
             .onEach {
                 log.trace { "Caching new spawner type [${it.name}]..." }
                 spawnerCache[it.name] = it
@@ -299,7 +309,7 @@ class NetGameProvider @Inject constructor(
             .collect()
     }
 
-    private fun subscribeForUpdates() {
+    private suspend fun subscribeForUpdates() {
         //TODO: handle game updates
     }
 }

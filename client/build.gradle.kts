@@ -3,8 +3,10 @@ import net.hoz.netapi.Versions
 dependencies {
     api(project(":api"))
 
-    compileOnly("commons-lang", "commons-lang", "2.6")
-    api("com.google.guava", "guava", "30.1-jre")
+    api(kotlin("reflect"))
+    api("org.jetbrains.kotlinx", "kotlinx-coroutines-core", Versions.COROUTINES)
+
+    api("com.google.guava", "guava", Versions.GUAVA)
 
     api("net.hoz", "netproto", Versions.NETPROTO)
     api("com.iamceph.resulter", "kotlin-extensions", Versions.RESULTER)
@@ -18,5 +20,5 @@ dependencies {
     api("com.github.ben-manes.caffeine", "caffeine", Versions.CAFFEINE)
     api("network.hoz", "kaffeine", Versions.KAFFEINE)
 
-    api("org.jetbrains.kotlinx", "kotlinx-coroutines-core", Versions.COROUTINES)
+    api("org.apache.commons", "commons-lang3",Versions.COMMONS_LANG)
 }

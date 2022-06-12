@@ -20,14 +20,14 @@ import com.iamceph.resulter.core.Resultable.Convertor
 import com.iamceph.resulter.core.api.ResultStatus
 import com.iamceph.resulter.core.model.ProtoResultable
 import com.iamceph.resulter.core.model.Resulters
-import net.kyori.adventure.text.minimessage.Template
 import org.screamingsandals.lib.lang.Translation
+import org.screamingsandals.lib.spectator.mini.placeholders.Placeholder
 
 internal data class LangResultableImpl(
     val status: ResultStatus,
     val error: Throwable?,
     override val translations: MutableList<Translation> = mutableListOf(),
-    override val templates: MutableList<Template> = mutableListOf()
+    override val placeholders: MutableList<Placeholder> = mutableListOf()
 ) : LangResultable {
     constructor(status: ResultStatus) : this(status, null)
 
@@ -45,8 +45,8 @@ internal data class LangResultableImpl(
         mutableListOf()
     )
 
-    override fun withTemplate(template: Template): LangResultable {
-        templates.add(template)
+    override fun withTemplate(placeholder: Placeholder): LangResultable {
+        placeholders.add(placeholder)
         return this
     }
 
