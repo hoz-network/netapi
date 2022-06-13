@@ -12,7 +12,6 @@ dependencies {
     api("com.iamceph.resulter", "kotlin-extensions", Versions.RESULTER)
 
     api("org.screamingsandals.lib", "core-common", Versions.SANDALS)
-    api("org.screamingsandals.lib", "command-common", Versions.SANDALS)
     api("org.screamingsandals.lib", "lang", Versions.SANDALS)
     api("org.screamingsandals.lib", "kotlin-extra", Versions.SANDALS)
 
